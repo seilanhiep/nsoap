@@ -1,0 +1,481 @@
+---
+title: "SOA hospital assessment in Cambodia"
+subtitle: ""
+date: "July 2025"
+author: ""
+abstract: ""
+abstract-title: ""
+format:
+  docx:
+#    reference-doc: "data/template-R.docx"  # ✅ correct key
+    toc: true
+    toc-depth: 3
+    toc-title: "Table of Contents"
+    number-sections: true
+    number-depth: 3
+    dpi: 300
+    fig-width: 8.5
+    highlight-style: solarized # arrow, pygments, tango, espresso, zenburn, kate, monochrome, breezedark, haddock, atom-one, ayu, breeze, dracula, github, gruvbox, monokai, nord, oblivion, printing, radical, solarized, vim
+
+execute:
+  echo: false
+  warning: false
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(purrr)
+library(flextable)
+library(gt)
+library(ggh4x)
+library(ggplot2)
+library(ggforce)
+library(grid)
+library(forcats)
+library(bslib)
+library(stringdist)
+library(gtsummary)
+```
+
+```{r}
+source("main-script.R")
+source("Write-excel.R")
+```
+
+# Data use
+
+-   SOA hospital assessment findings aimed to inform the new five-year NSOAP and improve interventions for access to safe and affordable Surgical Care in Cambodia.
+
+# Problem Statement and Rationale:
+
+Since there is no NSOAP (National Surgical, Obstetric, and Anesthesia Plans) in Cambodia, it has not been any data related to Surgical, Obstetric, and Anesthesia in past years. Thus, there is a need to visit the current status of Surgical, Obstetric, and Anesthesia (SOA), and strong evidence is needed to inform the decision makers, health program manager and hospital leaders and inform the development of new strategies and key interventions for Surgical, Obstetric, and Anesthesia, to describe intervention to achieve UHC and universal access for safe and affordable emergency and essential surgical care in Cambodia.
+
+The MOH called for this SOA assessment to review the national surgical care work. The SOA assessment intended to capture effective lessons learned and provide data, information on the nature, extent, and where possible the potential impact and sustainability of the SOA initiative. The SOA assessment is an initiative’s design, scope, implementation status, and the outcomes the nation gained.
+
+# Goal and Objectives of the Assessment
+
+The overall goal of the assessment was to generate evidence to inform subsequent strategic planning and data-driven decision-making and policy formulation on Surgical, Obstetric, and Anesthesia care in public and private health facilities in Cambodia.
+
+# General Objective
+
+To assess the status and outcomes of Cambodia’s national Surgical, Obstetric, and Anesthesia system and lessons learned Surgical, Obstetric, and Anesthesia in public and private health facilities in Cambodia.
+
+# Assessment procedure and sample size
+
+```{r}
+public.hf = sum(hf.denominator$Total[1:2])
+pub.cpa3 = hf.denominator$Total[1]
+pub.cpa2 = hf.denominator$Total[2]
+private.hf = sum(hf.denominator$Total[3:6])
+pri.clinic = sum(hf.denominator$Total[3])
+
+national.hf = overview$hflevel$number[2]
+provincial.hf = overview$hflevel$number[4]
+district.hf = overview$hflevel$number[1]
+private = hf.denominator$Sampling[[3]]
+
+```
+
+According to MoH report, there were `r public.hf` government hospitals (`r pub.cpa3` CPA3/ `r pub.cpa2` CPA2) and `r private.hf` private facilities in the country that were providing emergency and essential SOA care. Among those public hospitals, `r national.hf +2` were National hospital hospitals, `r provincial.hf` were provincial hospitals, `r district.hf` district referral hospital, and `r pri.clinic` were private clinics.
+
+The health facilities who provided SOA data in 2024 are `r national.hf` were National hospital hospitals, `r provincial.hf` were provincial hospitals, `r district.hf` district referral hospital, and `r private` were private clinics.
+
+This is self-data report, health facilities were attended the meeting conducted by the MoH and health facilities completed data in SOA assessment form (MoH form). The assessment tools, jointly developed by the MoH and Vital Strategies adopted from Global tools and validated in the Cambodia context, was used at each facility, the tools were defined five domains: infrastructure, service delivery, workforce (focused on specialist surgical, obstetrics, and anesthetics care providers), information management, and financing. Data collection was done from April to May 2025, data reported is for 2024.
+
+# Data Management and Analysis
+
+## Data Collection
+
+A comprehensive questionnaire comprising approximately 177 variables was developed and disseminated to all national hospitals, referral hospitals, first-level hospitals, private hospitals, and other relevant clinics. The assessment utilized the NSOAP Hospital Assessment Tool 2025, designed by the Program in Global Surgery and Social Change (PGSSC) at Harvard Medical School in collaboration with the World Health Organization (WHO). The tool evaluates six core domains: infrastructure, service delivery, health workforce, information management systems, financing, and governance. The availability of essential general infrastructure—including electricity, running water, internet, oxygen—as well as operating room equipment and supplies, pharmacy services, radiology, blood supply, laboratory services, and accessibility to health facilities within a two-hour travel window, was assessed using a standardized six-point scale: Always (100%), Almost always (76-99%), Often (51-75%), Sometimes (26-50%), Rarely (1-25%), Never (0%). In parallel, quantitative data were collected via Google Forms from participating facilities on key indicators, including surgical volume (major, minor, and pediatric surgeries), obstetric and gynecological (OBGYN) procedures, injury-related surgeries, non-trauma orthopedic procedures, specialty interventions, perioperative mortality, and bellwether operations. Workforce data, including the number and type of personnel operating within each facility, were recorded using a similar format.
+
+## Data processing and Analysis
+
+Following data collection via Google Forms, the technical team exported the responses into Excel format and utilized the R statistical software (Version 4.5.0) for data processing and analysis. The evaluation covered a 12-month period in 2024. Initial data preparation involved several quality assurance techniques, including the removal of duplicate entries, text normalization, data cleaning and filtering, and the standardization of categorical variables using fuzzy matching to ensure consistency across records. Subsequently, data were extracted and aggregated by country, by health facility level (national, provincial, district, and private), and by facility type (referral hospital - CPA3, first-level hospital - CPA2, private hospital, polyclinic, and clinic), as well as by province. Using relevant R packages, the technical team performed subset analyses and conditional transformations of infrastructure readiness scores. These included general utilities, blood supply, radiology, laboratory, pharmacy, and operating room (OR) equipment and supplies. Availability ratings were converted from a six-point scale to a numerical score following the WHO–PGSSC Surgical Assessment Tool (SAT) methodology: (where Always (100%) = 5, Almost always (76-99%) = 4, Often (51-75%) = 3, Sometimes (26-50%) = 2, Rarely (1-25%) = 1, Never (0%) = 0). Descriptive statistics were then applied to compute multiple variables including bed-related infrastructure, capacity of surgery coverage and bellwether procedure, and density of workforce together with the availability of resources and services across health facility levels and types as well as their provincial distribution. No inferential statistical tests were conducted at this stage. Furthermore, unmet needs comparison between surveyed dataset and HWO standard indicators and other vital indicators were conducted for gaps analysis. Finally, data visualization tools in R were used to generate graphs and summary tables, which were exported to Excel for reporting and further use. To ensure accuracy and completeness, the technical team conducted follow-up calls with data submitters to clarify any discrepancies or missing information. The analysis results were reviewed collaboratively by the technical team and representatives from the Ministry of Health, incorporating feedback to finalize the descriptive findings.
+
+# Key Indicator definitions
+
+To help the Ministry of Health with strategic decision-making, plenty of indicators were technically restructured and then disaggregated by health facilities and by provinces. Below are the methodologies of their application derivation.
+
+## Infrastructure Readiness
+
+The total score was first calculated and expressed as a percentage from the 61 variables including the availability and functionality of key surgical infrastructure components, such as general utility (Electricity, Running water, oxygen, Internet connectivity), pharmacy, Radiology, Blood transfusion within 2 hours, Laboratory and Operating room equipment and supplies. Each criterion was given a score according to these conditions where Always (100%) = 5, Almost always (76-99%) = 4, Often (51-75%) = 3, Sometimes (26-50%) = 2, Rarely (1-25%) = 1, Never (0%) = 0. Total scores, hence, were calculated by summing all the scores and then dividing by the multiplication of number of criteria involved (61) with its high score (5) to turn it into percentage. As the result, infrastructural readiness was then directly classified into four categories namely as Needs Improvement (0–25%), Partially Completed Readiness (26–75%), Almost Completed Readiness (76–99%) and completed readiness (100%).
+
+## Bellwether procedure capacity
+
+Bellwether procedures capacity—comprising open fracture repair, emergency laparotomy, and cesarean section—serve as indicators of a facility’s surgical capacity. Each component was given a point score of 0 or 1 for each of these three procedures. A conditional analysis was conducted by summing all the scores to determine the number of hospital facilities that can perform all three types of procedures (3), only two procedures (2), only one procedure (1), or none of the three procedures (0).
+
+## Presence of data management system
+
+The presence of data management system was graded on 6 criteria: 1) method record keeping; 2) personnel maintaining record keeping; 3) chart accessibility; 4) data collection for patient outcomes; 5) data collection for post operative mortality rate and 6) telemedicine usage. Each criterion was given a score of 0 and 1. All method record keeping had to be stored in electronic or paper or both formats to get 1 point. For other such three components— personnel maintaining record keeping, chart accessibility and telemedicine usage—each element of the indicator had to get the yes response from submitter to receive 1 point. Similarly, for criteria 4 and 5, each element of the indicator had to get the Always (100%) response from submitter to be encoded as 1. Therefore, indicators met all 6 criteria were placed in the category (Completed Readiness), those getting 5 were put in the category (Almost completed readiness), those missing 3 or 4 criteria were placed in the category (Partial completed readiness), and the rest included into the category (Needs Improvement).
+
+## Workforce availability 24h/7days a week
+
+The Workforce availability 24h/7days a week was based on 4 criteria: 1) surgical care available at night 24 hours; 2) surgical provider available 24 hours a day; 3) obstetrics/gynaecology provider available 24 hours a day; and 4) anesthesia provider available 24 hours a day. Each criterion was given a score according to these conditions where Always (100%) = 5, Almost always (76-99%) = 4, Often (51-75%) = 3, Sometimes (26-50%) = 2, Rarely (1-25%) = 1, Never (0%) = 0. Total scores, hence, were calculated by summing all the scores and then dividing by the multiplication of number of criteria involved (4) with its high score (5) to reshape it into percentage. In fact, the indicators met all 4 criteria were placed in the category (Completed Readiness with full score of 100), those getting score between 76-99 were put in the category (High Availability), those receiving scores between 26-75 were placed in the category (Partial Availability), and the rest included into the category (Needs Improvement).
+
+## Key performance indicators
+
+WHO indicators were generated at both national and provincial levels to highlight the recent status and their unmet need or over need to enhance the implementation and get timely intervention from the Ministry. Those indicators were calculated by dividing the total number of relevant services or resources by their catchment population throughout country and within each respective provinces, then multiplying the result by 100,000.
+
+-   Perioperative mortality rate:
+
+Total peri operation death per year (837) / Total operating theatre procedures performed per year (593,007) \* 100,000
+
+-   Operating Theatres procedures per 100,000 population done per year:
+
+Operating theatre cases done per year (593,007)/total population in Cambodia (17,280,543) \* 100,000
+
+-   Surgical procedures performed in the operating theatre per 100,000 population:
+
+Surgical procedures done per year (247,262) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Bellwether procedures performed in the operating theatre per 100,000 population:
+
+Bellwether procedures done per year (57,722) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   All workforces’ ratio per 100,000 population:
+
+All workforce (10069) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   SAO (Surgery, Anesthesia, and Obstetrics) workforce ratio per 100,000 population:
+
+Specialist surgical workforce (4,306) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Ratio of surgeons per 100,000 population:
+
+Specialist surgical workforce (1,555) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Ratio of anesthesia professionals per 100,000 population:
+
+Anesthesia professional workforce (1,556) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Ratio of allied health provider per 100,000 population:
+
+Allied health provider workforce (5,763) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Functioning Surgery Operationing Room (ORs) per 100,000 population:
+
+Total functioning Operating Rooms (376) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Surgery beds ratio per 100,000 people:
+
+Total surgery bed (5,477) / Total population in Cambodia (17,280,543) \* 100,000
+
+-   Surgical intensive care unit (ICU) bed ratio per 100,000 population:
+
+Total number of ICU beds (2,440) / Total number of hospital beds (25,004) *100,000 Total number of ICU beds (2,440) / Total number of surgical beds (5,477)* 100,000
+
+## Other main indicators
+
+Most indicators were directly calculated as percentage of their original scale to illustrate how many percents they were currently achieving and how many percents needed to be improved. Those indicators include: 1) Accessibility to the hospital within two hours, 2) WHO safety checklist usage within surgery operation room, 3) Medical Electronic Records, 4) SOA committee in public health facilities and 5) Health facilities with Bellwether Procedure.
+
+## Capacity of Surgery coverage
+
+Workforce components were categorized into five main classes during data analysis to help inform decision makers for further enhanced implementation and intervention.
+
+# Key Findings
+
+```{r}
+sur.procedure = format(sum(surgery$values, na.rm = TRUE), big.mark = ",", scientific = FALSE, digits = 2)
+
+major.surgeries =  ma.mi.surg[[2]][ma.mi.surg[[1]] %in% c("Majorsurgerylastyear")]
+fmajor.surgeries =  format(major.surgeries, big.mark = ",", scientific = FALSE, digits = 2)
+p.maj.surg = ma.mi.surg[[3]][ma.mi.surg[[1]] %in% c("Majorsurgerylastyear")]
+
+minor.surgeries = ma.mi.surg[[2]][ma.mi.surg[[1]] %in% c("Minorsurgerylastyear")]
+fminor.surgeries = format(minor.surgeries, big.mark = ",", scientific = FALSE, digits = 2)
+p.min.surg = ma.mi.surg[[3]][ma.mi.surg[[1]] %in% c("Minorsurgerylastyear")]
+
+paediatric.surgeries = ma.mi.surg[[2]][ma.mi.surg[[1]] %in% c("Paediatricsurgerylastyear")]
+fpaediatric.surgeries = format(paediatric.surgeries, big.mark = ",", scientific = FALSE, digits = 2)
+p.paediatric.surg = ma.mi.surg[[3]][ma.mi.surg[[1]] %in% c("Paediatricsurgerylastyear")]
+
+pmajmin = tserdel$bypubpri %>% filter(main.structure == "Totalsurgery")
+psurg.majmin = round(pmajmin$staff[2]/sum(surgery$values, na.rm = TRUE)*100, digits = 2)
+
+pub.cesarean = format(totalconbell$bypubpri$staff[4], big.mark = ",", scientific = FALSE, digits = 2) 
+
+pcesarean = format((totalconbell$bypubpri$staff[4]/(totalconbell$bypubpri$staff[1] + totalconbell$bypubpri$staff[4])*100), big.mark = ",", scientific = FALSE, digits = 2)
+
+```
+
+![](ggplot/service%20delivery%20by%20HF.JPEG)
+
+In 2024, `r sur.procedure` surgical procedures were performed in the surveyed health care facilities, of which `r fmajor.surgeries` were major surgeries (`r p.maj.surg` percent) and `r fminor.surgeries` were minor surgeries (`r p.min.surg` percent). More than a third (`r psurg.majmin` percent) of both minor and major surgeries were performed at public specialized hospitals. During the period, an `r pub.cesarean` equalled to `r pcesarean` percent of major elective cesarean section were performed at public hospital’ operating room (OR) blocks.
+
+```{r}
+totalofracture = acond.bellwether[[3]][acond.bellwether[[1]] %in% c("treatment open fracture")]
+caesarean.delivery = acond.bellwether[[3]][acond.bellwether[[1]] %in% c("caesarean delivery")]
+fcaesarean.delivery = format(caesarean.delivery, big.mark = ",", scientific = FALSE, digits = 2)
+laparotomy = acond.bellwether[[3]][acond.bellwether[[1]] %in% c("laparotomy")]
+flaparotomy = format(laparotomy, big.mark = ",", scientific = FALSE, digits = 2)
+
+pub.ofracture = totalconbell$bypubpri$staff[6]
+pri.ofracture = totalconbell$bypubpri$staff[3]
+ppri.ofracture = round(pri.ofracture/(pri.ofracture+pub.ofracture)*100, digits = 2)
+
+cpa3.ofracture = totalconbell$byhft$staff[6]
+pcpas.ofracture = round(cpa3.ofracture/(pri.ofracture+pub.ofracture)*100, digits = 2)
+```
+
+A larger volume of open fracture management was reported in public specialized hospitals CPA3 (`r cpa3.ofracture` or `r pcpas.ofracture` percent) and private hospitals (`r pri.ofracture` or `r ppri.ofracture` percent).
+
+```{r}
+pub.checklist.usage = pub.pri.checklist$percent[3]
+pri.checklist.usage = pub.pri.checklist$percent[1]
+
+hf.nosurgeon = perc.nonsurgeon$percent[1]
+
+cpa3surgeon = tpsurgeon$byhft$staff[2]
+pcpa3surgeon = tpsurgeon$byhft$percent[2]
+
+cpa2surgeon = tpsurgeon$byhft$staff[1]
+pcpa2surgeon = tpsurgeon$byhft$percent[1]
+
+```
+
+Surgical safety checklist (SSC) use improved during implementation of surgical care strategy. Hospitals s how SSC used at `r pub.checklist.usage` percentage at public hospital and `r pri.checklist.usage` percentage at private hospitals.
+
+Health facilities (hospitals/clinics) had no surgeon and obstetrician, at `r hf.nosurgeon`%. The CPA3 hospitals had a higher number of surgeons (`r cpa3surgeon` or `r pcpa3surgeon`%), CPA2 (`r cpa2surgeon`, `r pcpa2surgeon`%)
+
+```{r}
+cpa2.obstetrician = den.wforce$byhft$staff[den.wforce$byhft$geninfo_hcfacilitytype %in% c("CPA2") & den.wforce$byhft$workforces %in% c("Obstetricians gynaecologists")]
+pcpa2.obstetrician = round(cpa2.obstetrician/totalden.wforce$tvalue[totalden.wforce$workforces %in% c("Obstetricians gynaecologists")]*100, digits = 2)
+
+cpa3.obstetrician = den.wforce$byhft$staff[den.wforce$byhft$geninfo_hcfacilitytype %in% c("CPA3") & den.wforce$byhft$workforces %in% c("Obstetricians gynaecologists")]
+pcpa3.obstetrician = round(cpa3.obstetrician/totalden.wforce$tvalue[totalden.wforce$workforces %in% c("Obstetricians gynaecologists")]*100, digits = 2)
+
+private.obstetrician = den.wforce$bypubpri$staff[den.wforce$bypubpri$geninfo_hospitalfund %in% c("Private") & den.wforce$bypubpri$workforces %in% c("Obstetricians gynaecologists")]
+
+pprivate.obstetrician = round(private.obstetrician/totalden.wforce$tvalue[totalden.wforce$workforces %in% c("Obstetricians gynaecologists")]*100, digits = 2)
+
+pub.nonfuncORs = tnon.functioning.ORs$bypubpri$percent[tnon.functioning.ORs$bypubpri$geninfo_hospitalfund %in% c("Public") &
+tnon.functioning.ORs$bypubpri$type %in% c("Functioning ORs")]
+
+pri.nonfuncORs = tnon.functioning.ORs$bypubpri$percent[tnon.functioning.ORs$bypubpri$geninfo_hospitalfund %in% c("Private") &
+tnon.functioning.ORs$bypubpri$type %in% c("Functioning ORs")]
+```
+
+Primary hospitals (CPA2) have considerably lower numbers of obstetricians (`r cpa2.obstetrician`, `r pcpa2.obstetrician` percent), private health facilities (`r private.obstetrician`, `r pprivate.obstetrician`%) compared with CPA3 hospitals (`r cpa3.obstetrician`, `r pcpa3.obstetrician` percent). Public hospitals have proportion (`r pub.nonfuncORs` percent) of functioning operating theater (OT) and private `r pri.nonfuncORs` percent.
+
+## Infrastructure
+
+Emergency and essential surgical care equipment and supplies.
+
+National assessment figures showed that blood pressure measuring equipment and retractors were the two emergency and essential surgical care equipment items that were found to be available always in all health care facilities assessed. Data from the 196 health care facilities evaluated show the availability of this equipment and supplies to varying extents.
+
+## Workforce
+
+```{r}
+nat.surgeon = tallworkforce$byhfl[[3]][
+  tallworkforce$byhfl[[1]] %in% c("National Hospital") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+pnat.surgeon = tallworkforce$byhfl[[4]][
+  tallworkforce$byhfl[[1]] %in% c("National Hospital") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+dist.surgeon = tallworkforce$byhfl[[3]][
+  tallworkforce$byhfl[[1]] %in% c("District Hospital") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+pdist.surgeon = tallworkforce$byhfl[[4]][
+  tallworkforce$byhfl[[1]] %in% c("District Hospital") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+pri.surgeon = tallworkforce$byhfl[[3]][
+  tallworkforce$byhfl[[1]] %in% c("Private") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+ppri.surgeon = tallworkforce$byhfl[[4]][
+  tallworkforce$byhfl[[1]] %in% c("Private") &
+    tallworkforce$byhfl[[2]] %in% c("surgeons")]
+
+       
+```
+
+Specialized national hospitals had the most surgeons (`r nat.surgeon`, `r pnat.surgeon` percent) of all health facilities in the assessment. District hospitals have considerably fewer obstetricians (`r dist.surgeon`, `r pdist.surgeon` percent) and private clinics (`r pri.surgeon`, `r ppri.surgeon` percent).
+
+## Ratio of surgical workforce to population served
+
+```{r}
+puballsaos = tallworkforce$bypubpri[[3]][
+  tallworkforce$bypubpri[[1]] %in% c("Public") &
+    tallworkforce$bypubpri[[2]] %in% c("SAO specialist")]
+allsaos = format(puballsaos, big.mark = ",", scientific = FALSE, digits = 2)
+
+rat.allsaos = round((puballsaos / province$Total[nrow(province)]) * 100000, digits = 0)
+
+pri.allsaos = tallworkforce$bypubpri[[3]][
+  tallworkforce$bypubpri[[1]] %in% c("Private") &
+    tallworkforce$bypubpri[[2]] %in% c("SAO specialist")]
+priallsaos = format(pri.allsaos, big.mark = ",", scientific = FALSE, digits = 2)
+
+rat.priallsaos = round((pri.allsaos / province$Total[nrow(province)]) * 100000, digits = 0)
+```
+
+The deployment of qualified SOA care providers and nurse anesthetists in the health facilities were found to be a crucial step to bridge the gap of looking for highly qualified specialists, Cambodia show a significantly high ratio of surgical workforce, `r saopercapita` per 100,000 population, served in all levels of health care facilities evaluated. But the workforce is less in some provinces.
+
+The public specialized hospitals, with the largest workforce of `r allsaos` qualified surgeons, anesthesiologists or anesthesia care providers, and obstetricians, had a ratio of `r rat.allsaos` professionals per 100,000 population served. The ratio is observed in private clinics in which the assess 127 clinics had `r priallsaos` qualified surgical workforce for a ratio per 100,000 population served to be `r rat.priallsaos`.
+
+## Surgery Volume
+
+```{r}
+#sur.admission = tserdel$bypubpri[[3]][  tserdel$bypubpri[[1]] %in%  c("Private") &    tserdel$bypubpri[[2]] %in%  c("Totalsurgery")    ] +  tserdel$bypubpri[[3]][  tserdel$bypubpri[[1]] %in%  c("Public") &    tserdel$bypubpri[[2]] %in%  c("Totalsurgery")]
+sur.admission = sum(tsurgery$byhfl[[3]])
+fsur.admission = format(sur.admission, big.mark = ",", scientific = FALSE, digits = 2)
+
+nat.totsurgery = tsurgery$byhfl[[3]][tsurgery$byhfl[[1]] %in%  c("National Hospital")]
+pnat.totsurgery = round(nat.totsurgery/sum(tsurgery$byhfl[[3]]) *100,2)
+
+prov.totsurgery = tsurgery$byhfl[[3]][tsurgery$byhfl[[1]] %in%  c("Provincial Hospital")]
+pprov.totsurgery  = round(prov.totsurgery/sum(tsurgery$byhfl[[3]]) *100,2)
+
+dist.totsurgery = tsurgery$byhfl[[3]][tsurgery$byhfl[[1]] %in%  c("District Hospital")]
+pdist.totsurgery = round(dist.totsurgery/sum(tsurgery$byhfl[[3]]) *100,2)
+
+priv.totsurgery = tsurgery$byhfl[[3]][tsurgery$byhfl[[1]] %in%  c("Private")]
+ppriv.totsurgery = round(priv.totsurgery/sum(tsurgery$byhfl[[3]]) *100,2)
+
+surgery.including.orthopedic = sum(tserdel$bypubpri[[3]])
+fsurgery.including.orthopedic = format(surgery.including.orthopedic, big.mark = ",", scientific = FALSE, digits = 2)
+
+surgery.Specialty = tserdel$bypubpri[[3]][tserdel$bypubpri[[1]] %in%  c("Private") &  tserdel$bypubpri[[2]] %in%  c("Specialty")    ] +  tserdel$bypubpri[[3]][  tserdel$bypubpri[[1]] %in%  c("Public") &    tserdel$bypubpri[[2]] %in%  c("Specialty")]
+psurgery.Specialty = round(surgery.Specialty/surgery.including.orthopedic *100,2)
+
+publ.tsurgery = sum(tserdel$bypubpri[[3]][tserdel$bypubpri[[1]] %in%  c("Public")])
+ppubl.tsurgery = round(publ.tsurgery/surgery.including.orthopedic *100,2)
+
+priv.tsurgery = sum(tserdel$bypubpri[[3]][tserdel$bypubpri[[1]] %in%  c("Private")])
+ppriv.tsurgery = round(priv.tsurgery/surgery.including.orthopedic *100,2)
+
+```
+
+Access for Surgical and Anesthesia care Surgical Volume Surgical Admission.
+
+During 12 months in 2024, the surveyed health care facilities had a total of `r fsur.admission` surgical admissions, which included surgical, gynecologic, and obstetric admissions. More than one third (`r pnat.totsurgery` percent) of these admissions were reported at national hospitals and `r pprov.totsurgery` percent at provincial hospitals, `r pdist.totsurgery` at district hospital and `r ppriv.totsurgery` at private facilities. During this period there were a total of `r fsurgery.including.orthopedic` surgical admissions/procedures (orthopedics included), and from the reported surgical admissions, `r psurgery.Specialty` percent were from specialized hospitals and a comparable percentage of surgical admissions were reported from public hospitals (`r ppubl.tsurgery` percent) and private hospitals (`r ppriv.tsurgery` percent).
+
+```{r}
+total.obstetric.gynecologic = sum(tserdel$bypubpri[[3]][tserdel$bypubpri[[2]] %in% c("Obstetricsgynaecology")])
+ftotal.obstetric.gynecologic = format(total.obstetric.gynecologic, big.mark = ",", scientific = FALSE, digits = 2)
+
+ptotal.major.surgery = round(major.surgeries / surgery.including.orthopedic *100,2)
+
+total.bellwether = sum(acond.bellwether[[3]])
+ftotal.bellwether = format(total.bellwether, big.mark = ",", scientific = FALSE, digits = 2)
+```
+
+The surveyed health facilities reported `r ftotal.obstetric.gynecologic` obstetric and gynecologic admissions per year in 2024. In 2024, the surgical procedures were performed in the surveyed health care facilities, of which `r fminor.surgeries` were minor surgeries and `r fmajor.surgeries` were major surgeries. Major surgeries accounted for `r ptotal.major.surgery` percent of total surgeries.
+
+The pediatric surgeries (minor and major) totaled `r fpaediatric.surgeries` and Bellwether surgical procedures (cesarean section only ) were `r fcaesarean.delivery`, and all Bellwether surgical procedures were `r ftotal.bellwether`.
+
+```{r}
+publ.major.surg = tsub.surgery$bypubpri[[3]][tsub.surgery$bypubpri[[1]] %in% c("Public") & tsub.surgery$bypubpri[[2]] %in% c("Majorsurgerylastyear")]
+fpubl.major.surg = format(publ.major.surg, big.mark = ",", scientific = FALSE, digits = 2)
+ppubl.major.surg = round(publ.major.surg/sum(tsub.surgery$bypubpri[[3]])*100,2)
+
+publ.minor.surg = tsub.surgery$bypubpri[[3]][tsub.surgery$bypubpri[[1]] %in% c("Public") & tsub.surgery$bypubpri[[2]] %in% c("Minorsurgerylastyear")]
+fpubl.minor.surg = format(publ.minor.surg, big.mark = ",", scientific = FALSE, digits = 2)
+ppubl.minor.surg = round(publ.minor.surg/sum(tsub.surgery$bypubpri[[3]])*100,2)
+
+priv.major.surg = tsub.surgery$bypubpri[[3]][tsub.surgery$bypubpri[[1]] %in% c("Private") & tsub.surgery$bypubpri[[2]] %in% c("Majorsurgerylastyear")]
+fpriv.major.surg = format(priv.major.surg, big.mark = ",", scientific = FALSE, digits = 2)
+ppriv.major.surg = round(priv.major.surg/sum(tsub.surgery$bypubpri[[3]])*100,2)
+```
+
+```{r}
+publ.laparotomy = totalconbell$bypubpri[[3]][totalconbell$bypubpri[[1]] %in% c("Public") & totalconbell$bypubpri[[2]] %in% c("laparotomy")]
+fpubl.laparotomy = format(publ.laparotomy, big.mark = ",", scientific = FALSE, digits = 2)
+ppubl.laparotomy = round(publ.laparotomy / sum(totalconbell$bypubpri[[3]]) *100 ,2) 
+
+priv.laparotomy = totalconbell$bypubpri[[3]][totalconbell$bypubpri[[1]] %in% c("Private") & totalconbell$bypubpri[[2]] %in% c("laparotomy")]
+ppriv.laparotomy = round(priv.laparotomy / sum(totalconbell$bypubpri[[3]]) *100 ,2) 
+
+nat.caesarean = totalconbell$byhfl[[3]][totalconbell$byhfl[[1]] %in% c("National Hospital") & totalconbell$byhfl[[2]] %in% c("caesarean delivery")]
+fnat.caesarean = format(nat.caesarean, big.mark = ",", scientific = FALSE, digits = 2)
+pnat.caesarean = round(nat.caesarean / sum(totalconbell$bypubpri[[3]]) *100 ,2)
+
+nat.openfracture = totalconbell$bypubpri[[3]][totalconbell$bypubpri[[1]] %in% c("Public") & 
+                                          totalconbell$bypubpri[[2]] %in% c("treatment open fracture")]
+fnat.openfracture = format(nat.openfracture, big.mark = ",", scientific = FALSE, digits = 2)
+pnat.openfracture = round(nat.openfracture / sum(totalconbell$bypubpri[[3]]) *100 ,2)
+
+priv.openfracture = totalconbell$bypubpri[[3]][totalconbell$bypubpri[[1]] %in% c("Private") & 
+                                          totalconbell$bypubpri[[2]] %in% c("treatment open fracture")]
+fpriv.openfracture = format(priv.openfracture, big.mark = ",", scientific = FALSE, digits = 2)
+ppriv.openfracture = round(priv.openfracture / sum(totalconbell$bypubpri[[3]]) *100 ,2)
+```
+
+About `r fpubl.minor.surg` (`r ppubl.minor.surg` percent) minor surgeries and `r fpubl.major.surg` (`r ppubl.major.surg` percent) major surgeries were performed at public hospitals. Private hospitals reported `r ppriv.major.surg` percent (`r fpriv.major.surg`) major surgeries. A total of `r fpubl.laparotomy` (`r ppubl.laparotomy` percent) Bellwether surgical procedures (laparotomies of both adult and pediatric age groups) were performed at public hospitals, whereas private hospitals represented a `r priv.laparotomy` (`r ppriv.laparotomy` percent) of total Bellwether surgical procedures. Furthermore, specialized national hospitals were leading institutions for Bellwether surgical procedures (cesarean section) at `r fnat.caesarean` (`r pnat.caesarean` percent). A larger volume of Bellwether surgical procedures (open fracture management) was reported in public specialized national hospitals (`r nat.openfracture`, `r pnat.openfracture` percent) and private hospitals (`r priv.openfracture`, `r ppriv.openfracture` percent). Nevertheless, the least and sizably low volume of all types of surgical procedures were performed at CPA2 hospitals.
+
+## Ratio of surgical beds to the population served
+
+```{r}
+publ.beds = total.bed.surgery$bypubpri[[3]][total.bed.surgery$bypubpri[[1]] %in% c("Public")]
+
+publ.beds.ratio = round(publ.beds/ province$Total[nrow(province)] * 100000,0)
+
+priv.beds = total.bed.surgery$bypubpri[[3]][total.bed.surgery$bypubpri[[1]] %in% c("Private")]
+
+priv.beds.ratio = round(priv.beds/province$Total[nrow(province)] * 100000,0)
+```
+
+-   Bed ratio: Total surgery bed ratio is `r per.surgerybed` Comparatively, public health facilities with OR have the surgical bed to total population served ratio of 1 to `r publ.beds.ratio`, private health facilities where it is 1 to `r priv.beds.ratio`.
+
+## Number and functionality of Operating Room
+
+```{r}
+publ.ORs = tOR$bypubpri[[3]][tOR$bypubpri[[1]] %in% c("Public")]
+priv.ORs = tOR$bypubpri[[3]][tOR$bypubpri[[1]] %in% c("Private")]
+
+proport.publ.ORs = round(publ.ORs/ (publ.ORs+priv.ORs) *100,2)
+
+nat.func.ORs = tOR$byhfl[[3]][tOR$byhfl[[1]] %in% c("National Hospital")]
+
+prov.func.ORs = tOR$byhfl[[3]][tOR$byhfl[[1]] %in% c("Provincial Hospital")]
+
+dist.func.ORs = tOR$byhfl[[3]][tOR$byhfl[[1]] %in% c("District Hospital")]
+
+```
+
+-   Functionality of Operating Room rate per 100000 population is `r ytOR.percapita`
+-   Comparatively, public hospitals have the highest proportion of functioning OR (`r proport.publ.ORs` percent). Public specialized national hospitals have the highest number of OR (`r nat.func.ORs`), of which xx percent were observed to be functioning. Provincial and district hospitals have `r prov.func.ORs+dist.func.ORs` OR, of which xx percent were found to be functioning.
+
+## Surgical Care Safety- Surgical Safety Checklist utilization
+
+```{r}
+nat.checklist = safetychecklist$byhfl[[4]][safetychecklist$byhfl[[1]] %in% c("National Hospital") & safetychecklist$byhfl[[2]] %in% c("Always")]
+
+prov.checklist = safetychecklist$byhfl[[4]][safetychecklist$byhfl[[1]] %in% c("Provincial Hospital") & safetychecklist$byhfl[[2]] %in% c("Always")]
+
+dist.checklist = safetychecklist$byhfl[[4]][safetychecklist$byhfl[[1]] %in% c("District Hospital") & safetychecklist$byhfl[[2]] %in% c("Always")]
+
+priv.checklist = safetychecklist$byhfl[[4]][safetychecklist$byhfl[[1]] %in% c("Private") & safetychecklist$byhfl[[2]] %in% c("Always")]
+
+```
+
+The data disaggregated by level of care showed that specialized national hospitals (`r nat.checklist` percent) provincial hospital (`r prov.checklist`%), district hospitals (`r dist.checklist`%) and private clinics (`r priv.checklist` percent) demonstrated the SSC use within their own categories of surgery services delivery.
+
+## Perioperative mortality rate
+
+```{r}
+nat.perideath = tperi.operation$byhfl[[3]][tperi.operation$byhfl[[1]] %in% c("National Hospital")]
+
+pnat.perideath = round(nat.perideath/sum(tperi.operation$byhfl[[3]])*100,2)
+
+prov.perideath = tperi.operation$byhfl[[3]][tperi.operation$byhfl[[1]] %in% c("Provincial Hospital")]
+pprov.perideath = round(prov.perideath/sum(tperi.operation$byhfl[[3]])*100,2)
+
+dist.perideath = tperi.operation$byhfl[[3]][tperi.operation$byhfl[[1]] %in% c("District Hospital")]
+
+pdist.perideath = round(dist.perideath/sum(tperi.operation$byhfl[[3]])*100,2)
+
+priv.perideath = tperi.operation$byhfl[[3]][tperi.operation$byhfl[[1]] %in% c("Private")]
+```
+
+The assessment data analysis showed that relatively specialized national hospitals had the highest rate of perioperative mortality from `r pdist.perideath` percent to `r pnat.perideath` percent, and provincial hospitals show that `r pprov.perideath` percent.
+
+## Health data management
+
+# WHO indicators

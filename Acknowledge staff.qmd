@@ -1,0 +1,144 @@
+---
+title: ""
+subtitle: ""
+date: ""
+author: ""
+abstract: ""
+abstract-title: ""
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Table of Contents
+    number-sections: true
+    number-depth: 3
+    dpi: 300
+    fig-width: 8.5        
+#    fig-height: 5
+    self-contained: TRUE #FALSE  TRUE
+    highlight-style: github # arrow, pygments, tango, espresso, zenburn, kate, monochrome, breezedark, haddock, atom-one, ayu, breeze, dracula, github, gruvbox, monokai, nord, oblivion, printing, radical, solarized, vim
+
+execute:
+  echo: false
+  warning: false
+editor: visual
+---
+
+```{r}
+library(DT)
+source("main-script.R")
+# Acknowledgement staff in HF #####
+staffhf = clean.soa %>% 
+  select(2:3,9:11,5:8) %>% 
+  mutate(number = 1,
+         geninfo_hcfacilitytype = case_when(
+           geninfo_hcfacilitytype == "CPA3" & geninfo_hcfacilitylevel == "National Hospital" ~ "CPA3 National Hospital",
+           geninfo_hcfacilitytype == "CPA3" & geninfo_hcfacilitylevel == "Provincial Hospital" ~ "CPA3 Provincial Hospital",
+           geninfo_hcfacilitytype == "CPA2" & geninfo_hcfacilitylevel == "Provincial Hospital" ~ "CPA2 Provincial Hospital",
+           geninfo_hcfacilitytype == "CPA2" & geninfo_hcfacilitylevel == "District Hospital" ~ "CPA2 District Hospital",
+           TRUE ~ geninfo_hcfacilitytype )) %>% 
+  select(2,1,6:7,4)
+```
+
+# CPA3--National Hospital
+
+```{r}
+staff.nathf = staffhf %>% filter(geninfo_hcfacilitytype == "CPA3 National Hospital")
+datatable(
+  staff.nathf,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# CPA3--Provincial Hospital
+
+```{r}
+staff.provhf3 = staffhf %>% filter(geninfo_hcfacilitytype == "CPA3 Provincial Hospital")
+datatable(
+  staff.provhf3,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# CPA2--Provincial Hospital
+
+```{r}
+staff.provhf2 = staffhf %>% filter(geninfo_hcfacilitytype == "CPA2 Provincial Hospital")
+
+datatable(
+  staff.provhf2,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# CPA2 District Hospital
+
+```{r}
+staff.disthf = staffhf %>% filter(geninfo_hcfacilitytype == "CPA2 District Hospital")
+
+datatable(
+  staff.disthf,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# Private Hospital
+
+```{r}
+staff.privatehf = staffhf %>% filter(geninfo_hcfacilitytype == "Private Hospital")
+
+datatable(
+  staff.privatehf,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# Policlinic
+
+```{r}
+staff.policlinic = staffhf %>% filter(geninfo_hcfacilitytype == "Policlinic")
+
+datatable(
+  staff.policlinic,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+# Clinic
+
+```{r}
+staff.clinic = staffhf %>% filter(geninfo_hcfacilitytype == "Clinic")
+
+datatable(
+  staff.clinic,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+  )
+)
+```

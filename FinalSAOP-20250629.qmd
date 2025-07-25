@@ -1,0 +1,2705 @@
+---
+title: ""
+subtitle: ""
+date: ""
+author: ""
+abstract: ""
+abstract-title: ""
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Table of Contents
+    number-sections: true
+    number-depth: 3
+    dpi: 300
+    fig-width: 8.5        
+#    fig-height: 5
+    self-contained: TRUE #FALSE  TRUE
+    highlight-style: github # arrow, pygments, tango, espresso, zenburn, kate, monochrome, breezedark, haddock, atom-one, ayu, breeze, dracula, github, gruvbox, monokai, nord, oblivion, printing, radical, solarized, vim
+
+execute:
+  echo: false
+  warning: false
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(purrr)
+library(flextable)
+library(gt)
+library(ggh4x)
+library(ggplot2)
+library(highcharter)
+library(echarts4r)
+library(ggforce)
+library(grid)
+library(forcats)
+library(bslib)
+library(htmltools)
+library(fontawesome)
+library(stringdist)
+library(gtsummary)
+```
+
+```{r}
+source("main-script.R")
+source("Write-excel.R")
+```
+
+![](data/SOA%20cover.png)
+
+# Overview
+
+## Number of Hospital facility by level
+
+```{r}
+semi_hf(overview$hflevel$geninfo_hcfacilitylevel,
+        overview$hflevel$number,
+        chart_title = "Number of hostipal facility level")
+```
+
+## Number of Hospital facility by type
+
+```{r}
+semi_hf(overview$hftype$geninfo_hcfacilitytype,
+        overview$hftype$number,
+        chart_title = "Number of hostipal facility type")
+```
+
+## Number of Hospital facility surveyed
+
+```{r}
+semi_hf(denominator$geninfo_hcfacilitytype,
+        denominator$number,
+        chart_title = "Number of hostipal facility type")
+```
+
+## Table of all type of Hospital facilities population
+
+```{r}
+gt(hf.denominator) %>%
+    opt_table_font(font = "Arial") %>% 
+    tab_options(
+      table.font.size = "small",  # or use "small", "medium", "large"
+      heading.title.font.size = px(18),
+      heading.subtitle.font.size = px(14) ) %>% 
+    tab_header(
+      title = md(""),
+      subtitle = md("")) %>% 
+    tab_source_note(source_note = "")
+```
+
+## Number of Hospital facility by province
+
+```{r}
+group_ggplot(pro.hf.overview %>% 
+               mutate(geninfo_hospitalfund = fct_rev(geninfo_hospitalfund)),
+             geninfo_province,number, geninfo_hospitalfund, 
+             "Number of hostipal facility by province",
+             "All number of hostipal",
+             "",
+             'none')
+```
+
+## Surveyed data Vs MHIS data on C section and surgery
+
+```{r}
+gt(hmis.surgery.data) %>% 
+    opt_table_font(font = "Arial") %>% 
+    tab_options(
+      table.font.size = "small",  # or use "small", "medium", "large"
+      heading.title.font.size = px(18),
+      heading.subtitle.font.size = px(14) ) %>% 
+    tab_header(
+      title = md(""),
+      subtitle = md("")) %>% 
+    tab_source_note(source_note = "")
+```
+
+# Infrastructure
+
+## ICU Bed
+
+```{r}
+gt(hfl.beds) %>% 
+  opt_table_font(font = "Arial") %>% 
+  tab_options(
+    table.font.size = "small",  # or use "small", "medium", "large"
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14) ) %>% 
+  tab_header(
+    title = "",
+    subtitle = "") %>% 
+  tab_source_note(source_note = "")
+```
+
+## Bed-related infrastructure
+
+```{r}
+all.plot(tbeds, 
+         reorder(type,value),value,'', 
+         "All bed-related infrastructure", 
+         "Total number",
+         "")
+```
+
+### by hospital facility level
+
+```{r}
+group_ggplot(tbed.infor$byhfl, 
+             reorder(type,staff),staff,geninfo_hcfacilitylevel, 
+             "Bed-related infrastructure", 
+             "in number by health facility level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(tbed.infor$byhft, 
+             reorder(type,staff),staff,geninfo_hcfacilitytype, 
+             "Bed-related infrastructure", 
+             "in number by health facility type",
+             "",
+             'none')
+```
+
+### spatially distributed by province
+
+```{r}
+group_ggplot(tbed.infor$byprovince, 
+             geninfo_province,staff,type, 
+             "Bed-related infrastructure", 
+             "in number by province",
+             "",
+             'none')
+```
+
+## Main structure by score
+
+```{r}
+plot_score(main.infra,
+           main.structure, value, type, 
+           "Score of each main infrastructure", 
+           "% of its main structure")
+```
+
+## Sub-main structure by score
+
+### Electricity, Water, Oxygen, Internet, blood and other
+
+```{r}
+ewoibacgen.score = score.sub.infra %>%
+  filter(main.structure %in% factor_main[c(1:5,8,11:14)])
+plot_score(ewoibacgen.score, 
+           sub.structure, value, type, 
+           "Score of unchanging main infrastructure", 
+           "Their sub-domain are similar to the main ones")
+```
+
+### Operating room equipment and supplies
+
+```{r, fig.width= 10}
+ores.score = score.sub.infra %>%
+  filter(main.structure %in% factor_main[6])
+plot_score(ores.score, 
+           sub.structure, value, type, 
+           "Score of operation room equipment and supplies", 
+           "where are the problem occurred at sub-domain?")
+```
+
+### Laboratory
+
+```{r}
+labo.score = score.sub.infra %>%
+  filter(main.structure %in% factor_main[7])
+plot_score(labo.score, 
+           sub.structure, value, type, 
+           "Score of laboratory", 
+           "where are the problem occurred at sub-domain?")
+```
+
+### Radiology
+
+```{r}
+radio.score = score.sub.infra %>%
+  filter(main.structure %in% factor_main[9])
+plot_score(radio.score, 
+           sub.structure, value, type, 
+           "Score of radiology", 
+           "where are the problem occurred at sub-domain?")
+```
+
+### Pharmacy
+
+```{r}
+phacy.score = score.sub.infra %>%
+  filter(main.structure %in% factor_main[10])
+plot_score(phacy.score, 
+           sub.structure, value, type, 
+           "Score of pharmacy", 
+           "where are the problem occurred at sub-domain?")
+```
+
+## Main structure by scale
+
+```{r}
+group_ggplot(scale.main.infra %>% 
+               filter(main.structure != "Access and referral systems"),
+             main.structure,percent,scale, 
+             "Scale of each main infrastructure", 
+             "by default, the scale is in rank.",
+             "",
+             'none')
+```
+
+## Fully-functioning hospital facilities by its main infrastructure (Always)
+
+### by hospital facility level
+
+```{r}
+group_ggplot(fullmainfunction$byhfl %>% 
+               filter(scale == "Always",
+                      !main.structure %in% c("Access and referral systems"), main.structure != "NA"), 
+             main.structure,percent,geninfo_hcfacilitylevel, 
+             "Fully-functioning hospital facilities", 
+             "% of hospitals answering Always by its level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(fullmainfunction$byhft %>% 
+               filter(scale == "Always",
+                      !main.structure %in% c("Access and referral systems","NA"),
+                      !is.na(main.structure)), 
+             main.structure,percent,geninfo_hcfacilitytype, 
+             "Fully-functioning hospital facilities", 
+             "% of hospitals answering Always by its type",
+             "",
+             'none')
+```
+
+### spatially distributed by province
+
+#### Electricity, Water, Oxygen, Internet, blood
+
+```{r}
+group_ggplot(fullmainfunction$byprovince %>% 
+               filter(scale == "Always",
+                      main.structure %in% factor_main[c(11:14,8)],
+                      !is.na(main.structure)), 
+             geninfo_province,percent,main.structure, 
+             "Fully-functioning Electricity, Water, Oxygen, Internet", 
+             "% of hospitals answering Always by province",
+             "",
+             'none')
+```
+
+#### Operation room equipment and supplies, Laboratory, Radiology and Pharmacy
+
+```{r}
+group_ggplot(fullmainfunction$byprovince %>% 
+               filter(scale == "Always",
+                      main.structure %in% factor_main[c(6,7,9,10)],
+                      !is.na(main.structure)), 
+             geninfo_province,percent,main.structure, 
+             "Fully-functioning OR equipment and supplies/Laboratory/Radiology/Pharmacy", 
+             "% of hospitals answering Always by province",
+             "",
+             'none')
+```
+
+#### Other
+
+```{r}
+group_ggplot(fullmainfunction$byprovince %>% 
+               filter(scale == "Always",
+                      main.structure %in% factor_main[c(1:4)],
+                      !is.na(main.structure)), 
+             geninfo_province,percent,main.structure, 
+             "Fully-functioning general infrastructure", 
+             "% of hospitals answering Always by province",
+             "",
+             'none')
+```
+
+## Infrastructure Readiness
+
+```{r}
+all.plot(tinfra_readiness %>% 
+           mutate(readiness = factor(readiness, levels = factor_readiness)), 
+         readiness,infra.readiness,readiness, 
+         "Infrastructure readiness", 
+         "",
+         "")
+```
+
+### Infrastructure by its types
+
+```{r}
+leg.all.plot(infra_readiness %>% mutate(readiness = factor(readiness, levels = factor_readiness)),
+         type,infra.readiness,readiness,"Infrastructure full availability", "in percent","","top")
+```
+
+### by hospital facility level
+
+```{r}
+group_ggplot(infra.hfreadiness$byhfl, 
+             readiness,percent,geninfo_hcfacilitylevel, 
+             "Hospital facility answering (Always-100%)", 
+             "% of hostipal facility readiness by level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(infra.hfreadiness$byhft, 
+             readiness,percent,geninfo_hcfacilitytype, 
+             "Hospital facility answering (Always-100%)", 
+             "% of hostipal facility readiness by type",
+             "",
+             'none')
+```
+
+### spatially distributed by province
+
+```{r}
+group_ggplot(infra.hfreadiness$byprovince %>% 
+               mutate(readiness = factor(readiness, levels = rev(factor_readiness))), 
+             geninfo_province,percent,readiness, 
+             "Hospital facility answering (Always-100%)", 
+             "% of hostipal facility readiness by province",
+             "",
+             'none')
+```
+
+## Distribution of main infrastructure by score
+
+### By hospital facility level
+
+```{r}
+group_ggplot(dis.mainstruct$byhfl %>% 
+               filter(type == "score",
+                      !is.na(main.structure)) %>% 
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+             main.structure,value,geninfo_hcfacilitylevel, 
+             "Distribution of main infrastructure", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(dis.mainstruct$byhft %>% 
+               filter(type == "score",
+                      !is.na(main.structure)) %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             main.structure,value,geninfo_hcfacilitytype, 
+             "Distribution of main infrastructure", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### spatially distributed by province
+
+#### Electricity, Water, Oxygen, Internet
+
+```{r}
+iewo = dis.mainstruct$byprovince %>% 
+  filter(type == "score", !is.na(main.structure),
+         main.structure %in% c("Internet", "Electricity", "Runningwater", "Oxygen"))  %>%
+  mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))) %>% filter(geninfo_province != "NA")
+group_ggplot(iewo,
+             geninfo_province,value,main.structure, 
+             "Electricity, Water, Oxygen, Internet", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+#### Pharmacy, Radiology, Laboratory and Blood supply
+
+```{r}
+prlb = dis.mainstruct$byprovince %>% 
+  filter(type == "score", !is.na(main.structure),
+         main.structure %in% c("Blood supply", "Radiology", "Pharmacy")) %>%
+  mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))) %>% filter(geninfo_province != "NA")
+group_ggplot(prlb,
+             geninfo_province,value,main.structure, 
+             "Pharmacy, Radiology, Laboratory and Blood supply", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+#### Access and referral systems and OR equipement-supply
+
+```{r}
+accessORes = dis.mainstruct$byprovince %>% 
+  filter(type == "score",
+         !is.na(main.structure),
+         main.structure %in% c("Access and referral systems","Or equipment and supplies")) %>%
+  mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))) %>% filter(geninfo_province != "NA")
+
+group_ggplot(accessORes,
+             geninfo_province,value,main.structure, 
+             "Access and referral systems and Or equipment and supplies", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+#### Other infrastructure
+
+```{r}
+other = dis.mainstruct$byprovince %>% 
+  filter(type == "score",
+         !is.na(main.structure),
+         main.structure %in% c("Iv sedation anesthesia", "Spinal anesthesia", "Regional anesthesia")) %>%
+  mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))) %>% filter(geninfo_province != "NA")
+group_ggplot(other,
+             geninfo_province,value,main.structure, 
+             "Other infrastructure", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Sub structure by scale
+
+### Electricity, Water, Oxygen, Internet, 2 hours accessibility, blood and other
+
+```{r}
+iewo.scale = scale.sub.infra %>%
+  filter(main.structure %in% c("Internet", "Electricity", "Runningwater", "Oxygen",
+                               "Access and referral systems","Blood supply",
+                               "Iv sedation anesthesia", "Spinal anesthesia", "Regional anesthesia")) %>% 
+               mutate(scale = factor(scale , levels = factor_scale))
+
+group_ggplot(iewo.scale,sub.structure,percent,scale, 
+             "Electricity, Water, Oxygen, Internet, Blood supply and other by scale", 
+             "Only one sub-domain",
+             "",
+             'none')
+```
+
+### Operation room equipment and supplies
+
+```{r}
+ores.scale = scale.sub.infra %>%
+  filter(main.structure %in% c("Or equipment and supplies")) %>% 
+               mutate(scale = factor(scale , levels = factor_scale))
+group_ggplot(ores.scale,sub.structure,percent,scale, 
+             "Operation room equipment and supplies by score", 
+             "sub-domain",
+             "",
+             'none')
+```
+
+### Laboratory
+
+```{r}
+labo.scale = scale.sub.infra %>%
+  filter(main.structure %in% c("Laboratory")) %>% 
+               mutate(scale = factor(scale , levels = factor_scale))
+group_ggplot(labo.scale,sub.structure,percent,scale, 
+             "Laboratory by scale", 
+             "sub-domain",
+             "",
+             'none')
+```
+
+### Radiology
+
+```{r}
+radio.scale = scale.sub.infra %>%
+  filter(main.structure %in% c("Radiology")) %>% 
+               mutate(scale = factor(scale , levels = factor_scale))
+group_ggplot(radio.scale,sub.structure,percent,scale, 
+             "Radiology by scale", 
+             "sub-domain",
+             "",
+             'none')
+```
+
+### Pharmacy
+
+```{r}
+phacy.scale = scale.sub.infra %>%
+  filter(main.structure %in% c("Pharmacy")) %>% 
+               mutate(scale = factor(scale , levels = factor_scale))
+group_ggplot(phacy.scale,sub.structure,percent,scale, 
+             "Pharmacy by scale", 
+             "sub-domain",
+             "",
+             'none')
+```
+
+## Fully-functioning hospital facilities by its sub-main infrastructure (Always)
+
+### by hospital facility level
+
+#### Electricity, Water, Oxygen, Internet, 2 hours accessibility, blood and other
+
+```{r}
+group_ggplot( dis.substruct$byhfl %>% 
+                filter(type == "score",
+                       sub.structure %in% c("Iv sedation anesthesia","Spinal anesthesia","Regional anesthesia","Patients reach within 2 hours","Blood transfusion within 2 hours","Internet","Electricity","Runningwater","Oxygen"))  %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+              sub.structure,value,geninfo_hcfacilitylevel, 
+              "Electricity, Water, Oxygen, Internet, Blood supply and other by scale", 
+              "% of hospitals answering Always by sub domain",
+              "",
+              'none')
+```
+
+#### Operation room equipment and supplies
+
+```{r}
+sub.ores = score.sub.infra %>% filter(main.structure == "Or equipment and supplies")
+sub.ores = unique(sub.ores$sub.structure)
+group_ggplot( dis.substruct$byhfl %>% 
+                filter(type == "score",
+                       sub.structure %in% sub.ores)   %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+              sub.structure,value,geninfo_hcfacilitylevel, 
+              "Or equipment and supplies", 
+              "% of hospitals answering Always by sub domain",
+              "",
+              'none')
+```
+
+#### Laboratory
+
+```{r}
+sub.labs = score.sub.infra %>% filter(main.structure == "Laboratory") 
+sub.labs = unique(sub.labs$sub.structure) 
+group_ggplot(dis.substruct$byhfl %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.labs)  %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)), 
+             sub.structure,value,geninfo_hcfacilitylevel, 
+             "Laboratory", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Radiology
+
+```{r}
+sub.radio = score.sub.infra %>% filter(main.structure == "Radiology")
+sub.radio = unique(sub.radio$sub.structure)
+group_ggplot(dis.substruct$byhfl %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.radio)   %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)), 
+             sub.structure,value,geninfo_hcfacilitylevel, 
+             "Radiology", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Pharmacy
+
+```{r}
+sub.phar = score.sub.infra %>% filter(main.structure == "Pharmacy")
+sub.phar = unique(sub.phar$sub.structure)
+group_ggplot(dis.substruct$byhfl %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.phar)   %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)), 
+             sub.structure,value,geninfo_hcfacilitylevel, 
+             "Pharmacy", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+#### Electricity, Water, Oxygen, Internet, 2 hours accessibility, blood and other
+
+```{r}
+group_ggplot(dis.substruct$byhft %>% 
+               filter(type == "score",
+                      sub.structure %in% c("Iv sedation anesthesia","Spinal anesthesia","Regional anesthesia","Patients reach within 2 hours","Blood transfusion within 2 hours","Internet","Electricity","Runningwater","Oxygen"))  %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             sub.structure,value,geninfo_hcfacilitytype, 
+             "Electricity, Water, Oxygen, Internet, Blood supply and other by scale", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Operation room equipment and supplies
+
+```{r}
+sub.oreshft = score.sub.infra %>% filter(main.structure == "Or equipment and supplies")
+sub.oreshft = unique(sub.oreshft$sub.structure)
+group_ggplot(dis.substruct$byhft %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.oreshft)  %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             sub.structure,value,geninfo_hcfacilitytype, 
+             "Or equipment and supplies", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Laboratory
+
+```{r}
+sub.labshft = score.sub.infra %>% filter(main.structure == "Laboratory")
+sub.labshft = unique(sub.labshft$sub.structure)
+group_ggplot(dis.substruct$byhft %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.labshft)  %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)), 
+             sub.structure,value,geninfo_hcfacilitytype, 
+             "Laboratory", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Radiology
+
+```{r}
+sub.radiohft = score.sub.infra %>% filter(main.structure == "Radiology")
+sub.radiohft = unique(sub.radiohft$sub.structure)
+group_ggplot(dis.substruct$byhft %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.radiohft)  %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)), 
+             sub.structure,value,geninfo_hcfacilitytype, 
+             "Radiology", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### Pharmacy
+
+```{r}
+sub.pharhft = score.sub.infra %>% filter(main.structure == "Pharmacy")
+sub.pharhft = unique(sub.pharhft$sub.structure)
+group_ggplot(dis.substruct$byhft %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.pharhft)  %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)), 
+             sub.structure,value,geninfo_hcfacilitytype, 
+             "Pharmacy", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+### spatially distributed by province
+
+#### Electricity, Water, Oxygen, Internet, 2 hours accessibility, blood and other
+
+#### graph
+
+```{r, fig.width= 10}
+group_ggplot(dis.substruct$byprovince %>% 
+               filter(type == "score",
+                      sub.structure %in% c("Iv sedation anesthesia","Spinal anesthesia","Regional anesthesia","Patients reach within 2 hours","Blood transfusion within 2 hours","Internet","Electricity","Runningwater","Oxygen")),
+             fct_rev(geninfo_province),value,sub.structure, 
+             "Electricity, Water, Oxygen, Internet, Blood supply and other by scale", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### table
+
+```{r}
+table.ewio = dis.substruct$byprovince %>% 
+  filter(type == "score",
+         sub.structure %in% c("Iv sedation anesthesia","Spinal anesthesia","Regional anesthesia","Patients reach within 2 hours","Blood transfusion within 2 hours","Internet","Electricity","Runningwater","Oxygen")) %>%
+  select(1,3,5) %>% 
+  pivot_wider(names_from = sub.structure, values_from = value)
+
+gt(table.ewio) %>% 
+  opt_table_font(font = "Arial") %>% 
+  tab_options(
+    table.font.size = "small",  # or use "small", "medium", "large"
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14) ) %>% 
+  tab_header(
+    title = "",
+    subtitle = "") %>% 
+  tab_source_note(source_note = "")
+```
+
+#### Operation room equipment and supplies
+
+#### graph
+
+```{r, fig.width= 10}
+sub.orspro = score.sub.infra %>% filter(main.structure == "Or equipment and supplies")
+sub.orspro = unique(sub.orspro$sub.structure)
+dis.substruct$byprovince$sub.structure <- str_wrap(dis.substruct$byprovince$sub.structure, width = 10)
+
+group_ggplot(dis.substruct$byprovince %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.orspro),
+             fct_rev(geninfo_province),value,sub.structure, 
+             "Or equipment and supplies", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### table
+
+```{r}
+table.pharpro = dis.substruct$byprovince %>% 
+  filter(type == "score",
+         sub.structure %in% sub.orspro) %>%
+  select(1,3,5) %>% 
+  pivot_wider(names_from = sub.structure, values_from = value) 
+
+gt(table.pharpro) %>% 
+  opt_table_font(font = "Arial") %>% 
+  tab_options(
+    table.font.size = "small",  # or use "small", "medium", "large"
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14) ) %>% 
+  tab_header(
+    title = "",
+    subtitle = "") %>% 
+  tab_source_note(source_note = "")
+```
+
+#### Laboratory
+
+#### graph
+
+```{r, fig.width= 10}
+sub.labspro = score.sub.infra %>% filter(main.structure == "Laboratory")
+sub.labspro = unique(sub.labspro$sub.structure)
+group_ggplot(dis.substruct$byprovince %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.labspro), 
+             fct_rev(geninfo_province),value,sub.structure, 
+             "Laboratory", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### table
+
+```{r}
+table.labspro = dis.substruct$byprovince %>% 
+  filter(type == "score",
+         sub.structure %in% sub.labspro) %>%
+  select(1,3,5) %>% 
+  pivot_wider(names_from = sub.structure, values_from = value) 
+gt(table.labspro) %>% 
+  opt_table_font(font = "Arial") %>% 
+  tab_options(
+    table.font.size = "small",  # or use "small", "medium", "large"
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14) ) %>% 
+  tab_header(
+    title = "",
+    subtitle = "") %>% 
+  tab_source_note(source_note = "")
+```
+
+#### Pharmacy
+
+#### graph
+
+```{r, fig.width= 10}
+sub.pharpro = score.sub.infra %>% filter(main.structure == "Pharmacy")
+sub.pharpro = unique(sub.pharpro$sub.structure)
+group_ggplot(dis.substruct$byprovince %>% 
+               filter(type == "score",
+                      sub.structure %in% sub.pharpro), 
+             fct_rev(geninfo_province),value,sub.structure, 
+             "Pharmacy", 
+             "% of hospitals answering Always by sub domain",
+             "",
+             'none')
+```
+
+#### table
+
+```{r}
+table.pharpro = dis.substruct$byprovince %>% 
+  filter(type == "score",
+         sub.structure %in% sub.pharpro) %>%
+  select(1,3,5) %>% 
+  pivot_wider(names_from = sub.structure, values_from = value)
+gt(table.pharpro) %>% 
+  opt_table_font(font = "Arial") %>% 
+  tab_options(
+    table.font.size = "small",  # or use "small", "medium", "large"
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(14) ) %>% 
+  tab_header(
+    title = "",
+    subtitle = "") %>% 
+  tab_source_note(source_note = "")
+```
+
+# Service delivery
+
+## Capacity of Surgery coverage
+
+```{r}
+all.plot(tprocedure %>% 
+           mutate(main.structure = forcats::fct_reorder(main.structure, 
+                                                        total_value, .desc = TRUE)), 
+         main.structure,total_value,'', 
+         "Surgical facilities offering bellwether procedures", 
+         "operation per year",
+         "")
+```
+
+## By hospital facility level
+
+```{r}
+group_ggplot(tserdel$byhfl %>% 
+               filter(!is.na(geninfo_hcfacilitylevel)) %>% 
+               mutate(main.structure = forcats::fct_reorder(main.structure, 
+                                                            staff, .desc = FALSE)), 
+             main.structure,staff,geninfo_hcfacilitylevel, 
+             "Total of all service delivery", 
+             "by hospital level",
+             "",'none')
+```
+
+## By hospital facility type
+
+```{r}
+group_ggplot(tserdel$byhft %>% 
+               filter(!is.na(geninfo_hcfacilitytype)) %>% 
+               mutate(main.structure = forcats::fct_reorder(main.structure, 
+                                                            staff, .desc = FALSE)), 
+             main.structure,staff,geninfo_hcfacilitytype, 
+             "Total of all service delivery", 
+             "by hospital type",
+             "",'none')
+```
+
+## Spatially distributed by province
+
+```{r}
+group_ggplot(tserdel$byprovince, 
+             geninfo_province,staff,main.structure, 
+             "Total of all service delivery", 
+             "by hospital type",
+             "",'none')
+```
+
+## Surgery volume
+
+::: {layout="[[50,50],[100]]"}
+```{r}
+value_box(
+  title = HTML("Surgical procedures done per year"),
+  value = sum(tsurgery$byhfl$staff),
+  showcase = fa_i("handshake", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+major.surgeries =  ma.mi.surg[[2]][ma.mi.surg[[1]] %in% c("Majorsurgerylastyear")]
+fmajor.surgeries =  format(major.surgeries, big.mark = ",", scientific = FALSE, digits = 2)
+
+value_box(
+  title = HTML("Major surgical procedures done per year"),
+  value = fmajor.surgeries,
+  showcase = fa_i("handshake", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+minor.surgeries = ma.mi.surg[[2]][ma.mi.surg[[1]] %in% c("Minorsurgerylastyear")]
+fminor.surgeries = format(minor.surgeries, big.mark = ",", scientific = FALSE, digits = 2)
+value_box(
+  title = HTML("Minor Surgical procedures done per year"),
+  value = fminor.surgeries,
+  showcase = fa_i("handshake", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+:::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(tsub.surgery$byhfl,
+             sub.structure,staff,geninfo_hcfacilitylevel, 
+             "Surgical procedures", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(tsub.surgery$byhft,
+             sub.structure,staff,geninfo_hcfacilitytype, 
+             "Surgical procedures", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(tsub.surgery$byprovince,
+             geninfo_province,staff,sub.structure, 
+             "Surgical procedures", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Surgical facilities offering bellwether procedures
+
+::: {layout="[[100],[100]]"}
+```{r}
+allbell = tsur.bellwether %>% filter(scales == "Yes")
+value_box(
+  title = HTML("All Surgical facilities offering bellwether procedures"),
+  value = sum(allbell$percent, na.rm = TRUE),
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+leg.all.plot(sur.bellwether %>% filter(scales != "NA"), 
+         scales,percent,geninfo_hospitalfund, 
+         "Surgical facilities offering bellwether procedures", 
+         "operation per year",
+         "", "right") #"bottom" "top"
+```
+:::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(hfbellwether$byhfl %>% filter(scales != "NA"),
+             scales,percent,geninfo_hcfacilitylevel, 
+             "Surgical facilities offering bellwether procedures", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(hfbellwether$byhft %>% filter(scales != "NA"),
+             scales,percent,geninfo_hcfacilitytype, 
+             "Surgical facilities offering bellwether procedures", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(hfbellwether$byprovince %>% filter(scales != "NA")  %>% 
+           mutate(scales = factor(scales, levels = factor_yesno)),
+             geninfo_province,percent,scales, 
+             "Surgical facilities offering bellwether procedures", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Bellwether procedures
+
+Bellwether procedures include open fracture repair, emergency laparotomy (eg, splenectomy for trauma and repair of hollow viscous perforation), and cesarean section. First-level hospitals were divided into the following 3 groups:
+
+```{r}
+allbellwether = totalconbell1 %>% 
+  group_by(tcon.bellw) %>% 
+  summarise(number = n()) %>% 
+  mutate(percent = round(number/ sum(number) * 100, digits = 2))
+
+# Automatically wrap labels to 10 characters per line 
+allbellwether$tcon.bellw <- 
+  str_wrap(allbellwether$tcon.bellw, width = 22)
+
+all.plot(allbellwether, 
+        fct_rev(reorder(tcon.bellw,percent)),percent,tcon.bellw, 
+         "Health facilities with Bellwether procedure capabilities", 
+         "Number of health facilities",
+         "")
+```
+
+### By hospital facility level
+
+```{r}
+tconbell$byhfl$tcon.bellw <- 
+  str_wrap(tconbell$byhfl$tcon.bellw, width = 22)
+
+group_ggplot(tconbell$byhfl %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+             fct_rev(tcon.bellw),percent,geninfo_hcfacilitylevel, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+tconbell$byhft$tcon.bellw <- 
+  str_wrap(tconbell$byhft$tcon.bellw, width = 22)
+
+group_ggplot( tconbell$byhft  %>% 
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             fct_rev(tcon.bellw),percent,geninfo_hcfacilitytype, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width= 10}
+tconbell$byprovince$tcon.bellw <- str_wrap(tconbell$byprovince$tcon.bellw, width = 22)
+
+group_ggplot(tconbell$byprovince %>%
+               mutate(geninfo_province = factor(geninfo_province, levels = factor_province)),
+             geninfo_province,percent, tcon.bellw, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## All bellwether procedure capabilities
+
+::: {layout="[100]"}
+```{r}
+value_box(
+  title = HTML("Bellwether procedures done per year"),
+  value = sum(ds.bellwether.per$byhfl$staff),
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+:::
+
+```{r}
+
+all.plot(acond.bellwether,
+         type,tvalue,
+         '',
+         "All bellwether procedures",
+         "",
+         "")
+```
+
+### By hospital facility
+
+```{r}
+group_ggplot(totalconbell$bypubpri %>%
+               mutate(geninfo_hospitalfund = factor(geninfo_hospitalfund, levels = factor_fund)),
+             type,staff,geninfo_hospitalfund, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility",
+             "",
+             'none')
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(totalconbell$byhfl %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+             type,staff,geninfo_hcfacilitylevel, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(totalconbell$byhft%>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             type,staff,geninfo_hcfacilitytype, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(totalconbell$byprovince %>%
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## WHO Quality and safety checklist
+
+```{r}
+all.plot(checklist %>% 
+           filter(scale != "NA") %>% 
+           mutate(scale = factor(scale, levels = rev(factor_scale))), 
+         scale,percent,scale, 
+         "WHO Quality and safety checklist", 
+         "",
+         "")
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(safetychecklist$byhfl %>%
+               filter(scale != "NA") %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel),
+                      scale = factor(scale, levels = rev(factor_scale))),
+             scale,percent,geninfo_hcfacilitylevel, 
+             "WHO Quality and safety checklist",
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(safetychecklist$byhft %>%
+               filter(scale != "NA") %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype),
+                      scale = factor(scale, levels = rev(factor_scale))),
+             scale,percent,geninfo_hcfacilitytype, 
+             "WHO Quality and safety checklist", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(safetychecklist$byprovince %>%
+               filter(scale != "NA") %>%
+               mutate(geninfo_province = factor(geninfo_province, levels = rev( factor_province)),
+                      scale = factor(scale, levels = (factor_scale))),
+             geninfo_province,percent,scale, 
+             "WHO Quality and safety checklist", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Peri operation death
+
+Perioperative mortality rate: The number of in-hospital deaths from any cause in patients who have undergone a procedure done in an operating theatre, divided by the total number of procedures, presented as a percentage.
+
+::: {layout="[[50,50],[50,50]]"}
+```{r}
+value_box(
+  title = HTML("Total peri operation death"),
+  value = ntperi.operation,
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Total operating theatre procedures performed"),
+  value = ntoperating.theatre,
+  showcase = fa_i("heartbeat", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgery mortality rate per 100,000 population"),
+  value = nsurg.mortality.rate,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "green")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgery mortality rate"),
+  value = p.nsurg.mortality.rate,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+:::
+
+## By hospital facility level
+
+```{r}
+group_ggplot(tperi.operation$byhfl %>% 
+               filter(!is.na(geninfo_hcfacilitylevel)), 
+             type,staff,geninfo_hcfacilitylevel, 
+             "Total Peri operation death", 
+             "by hospital level",
+             "",'none')
+```
+
+## By hospital facility type
+
+```{r}
+group_ggplot(tperi.operation$byhft %>% 
+               filter(!is.na(geninfo_hcfacilitytype)), 
+             type,staff,geninfo_hcfacilitytype, 
+             "Total Peri operation death", 
+             "by hospital type",
+             "",'none')
+```
+
+## Spatially distributed by province
+
+```{r}
+group_ggplot(tperi.operation$byprovince, 
+             geninfo_province,staff,type, 
+             "Total Peri operation death", 
+             "distributed by province",
+             "",'none')
+```
+
+# Workforce
+
+## Density of Workforce
+
+```{r}
+all.plot(totalden.wforce, 
+         fct_rev(workforces),tvalue,'', 
+         "Health facilities with Bellwether procedure capabilities", 
+         "Number of health facilities",
+         "")
+```
+
+### by hospital facility level
+
+#### table
+
+```{r}
+gt.denwf.hfl = den.wforce$byhfl %>% 
+  select(c(-4)) %>% 
+  pivot_wider(names_from = geninfo_hcfacilitylevel, values_from = staff) %>%
+  mutate(Total = rowSums(across(where(is.numeric)), na.rm = TRUE)) %>% 
+  select(workforces, `National Hospital`, `Provincial Hospital`, `District Hospital`,Private, Total)
+wf.table(gt.denwf.hfl,"**Density of Workforce**","*by hospital facility level*")
+```
+
+#### graph
+
+```{r}
+group_ggplot(den.wforce$byhfl, 
+             fct_rev(workforces),staff,geninfo_hcfacilitylevel, 
+             "Density of Workforce", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+#### table
+
+```{r}
+gt.denwf.hft = den.wforce$byhft %>% 
+  select(c(-4)) %>% 
+  pivot_wider(names_from = geninfo_hcfacilitytype, values_from = staff) %>% 
+  mutate(Total = rowSums(across(where(is.numeric)), na.rm = TRUE)) %>% 
+  select(workforces, CPA3,CPA2,`Private Hospital`,Policlinic,Clinic, Total)
+wf.table(gt.denwf.hft,"**Density of Workforce**","*by hospital facility type*")
+```
+
+#### graph
+
+```{r, fig.width= 10}
+den.wforce$byhft$workforces <- str_wrap(den.wforce$byhft$workforces, width = 35)
+  
+group_ggplot(den.wforce$byhft, 
+             fct_rev(workforces),staff,geninfo_hcfacilitytype, 
+             "Density of Workforce", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+gt.denwf.pro = den.wforce$byprovince %>% 
+  select(c(-4)) %>% 
+  pivot_wider(names_from = geninfo_province, values_from = staff) %>% 
+  mutate(Total = rowSums(across(where(is.numeric)), na.rm = TRUE))
+
+wf.table(gt.denwf.pro,"**Workforce density**","*Data from analysis*")
+```
+
+#### surgeons/Obstetricians gynaecologists/Anaesthesiologists
+
+```{r, fig.width= 9}
+surgeon = den.wforce$byprovince %>% 
+  filter(workforces %in% unique(wforce$workforces)[c(1:5)])
+surgeon$workforces <- str_wrap(surgeon$workforces, width = 20)
+group_ggplot(surgeon, 
+             geninfo_province,staff,workforces, 
+             "surgeons/Obstetricians gynaecologists/Anaesthesiologists", 
+             "",
+             "",
+             'none')
+```
+
+#### General doctors/Medical officers/Nurses
+
+```{r, fig.width= 9}
+doctor = den.wforce$byprovince %>% 
+  filter(workforces %in% unique(wforce$workforces)[c(6:11,18)])
+doctor$workforces <- str_wrap(doctor$workforces, width = 15)
+
+group_ggplot(doctor, 
+             geninfo_province,staff,workforces, 
+             "General doctors/Medical officers/Nurses", 
+             "",
+             "",
+             'none')
+```
+
+#### Allied health providers
+
+```{r, fig.width= 9}
+alliance = den.wforce$byprovince %>% 
+  filter(workforces %in% unique(wforce$workforces)[c(12:17)])
+alliance$workforces <- str_wrap(alliance$workforces, width = 20)
+group_ggplot(alliance, 
+             geninfo_province,staff,workforces, "Allied health providers", "","",'none')
+```
+
+## Capacity of Surgery coverage
+
+### By hospital facility level
+
+```{r}
+group_ggplot(tallworkforce$byhfl ,
+             type,staff,geninfo_hcfacilitylevel, 
+             "Specialist surgical workforce density", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(tallworkforce$byhft ,
+             type,staff,geninfo_hcfacilitytype, 
+             "Specialist surgical workforce density", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+tallworkforce$byprovince$type = str_wrap(tallworkforce$byprovince$type, width = 20)
+group_ggplot(tallworkforce$byprovince,
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Nurse to Patient Ratio
+
+```{r}
+all.plot(wforce.availability %>% filter(scales != "NA"),
+         scales,percent,scales,"Nurse to Patient Ratio", "in percent","")
+
+```
+
+### Workforce availability by types
+
+```{r}
+group_ggplot(wforce.avail.proportion %>% 
+               filter(scales != "NA"), 
+             workforces,percent,scales, "Workforce availability by types", "","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(ward$byhfl %>% 
+               filter(scales != "NA"), 
+             scales,percent,geninfo_hcfacilitylevel, "Workforce availability", "By hospital facility level","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(ward$byhft %>% 
+               filter(scales != "NA"), 
+             scales,percent,geninfo_hcfacilitytype, "Workforce availability", "By hospital facility type","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(ward$byprovince %>% 
+               filter(scales != "NA"), 
+             geninfo_province,percent,scales, "Workforce availability", "distributed by province","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+## Service provider available 24 hours a day
+
+```{r}
+over.provider <- provider.avail %>% 
+  group_by(workforces, scale) %>% 
+  summarise(staff = n(), .groups = 'drop_last') %>% 
+  mutate(percent = round((staff/sum(staff) *100 ), digits = 2),
+         tpercent = round((staff/(nrow(wforce.avail))) * 100, 2),
+         scale = factor(scale, levels = factor_scale))
+
+group_ggplot(over.provider %>% filter(!is.na(scale)), 
+             workforces,percent,scale, "Service provider available 24 hours a day", "","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### By hospital facility level
+
+```{r}
+provider.hfl <- provider.avail %>% 
+  group_by(geninfo_hcfacilitylevel,workforces, scale) %>% 
+  summarise(staff = n(), .groups = 'drop_last') %>% 
+  mutate(percent = round((staff/sum(staff) *100 ), digits = 2),
+         tpercent = round((staff/(nrow(provider.avail))) * 100, 2),
+         geninfo_hcfacilitylevel =  factor( geninfo_hcfacilitylevel,
+                                            levels = factor_hflevel)) %>% 
+  filter(scale == "Always")
+group_ggplot(provider.hfl,
+             workforces,percent,geninfo_hcfacilitylevel, "Service provider available 24 hours a day", "By hospital facility level","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### By hospital facility type
+
+```{r}
+provider.hft <- provider.avail %>% 
+  group_by(geninfo_hcfacilitytype,workforces, scale) %>% 
+  summarise(staff = n(), .groups = 'drop_last') %>% 
+  mutate(percent = round((staff/sum(staff) *100 ), digits = 2),
+         tpercent = round((staff/(nrow(provider.avail))) * 100, 2),
+         geninfo_hcfacilitytype =  factor( geninfo_hcfacilitytype,
+                                           levels = factor_hftype)) %>% 
+  filter(scale == "Always")
+
+group_ggplot(provider.hft,
+             workforces,percent,geninfo_hcfacilitytype, "Service provider available 24 hours a day", "By hospital facility type","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=10}
+provider.byprovince <- provider.avail %>% 
+  group_by(geninfo_province,workforces, scale) %>% 
+  summarise(staff = n(), .groups = 'drop_last') %>% 
+  mutate(percent = round((staff/sum(staff) *100 ), digits = 2),
+         tpercent = round((staff/(nrow(provider.avail))) * 100, 2),
+         geninfo_province =  factor(geninfo_province,
+                                    levels = rev(factor_province))) %>% 
+  filter(geninfo_province != "NA",
+         scale == "Always")
+
+group_ggplot(provider.byprovince,
+             geninfo_province,percent,workforces, "Service provider available 24 hours a day", "distributed by province","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+### Workforce availability 24h/7days a week
+
+```{r}
+all.plot(gt.wforce.avail.allday %>% 
+           mutate(fullavail = factor(fullavail, levels = rev(factor_wforceavai_allday))),
+         fullavail,percent,fullavail,"Workforce availability 24h/7days a week", "in percent","")
+```
+
+## Continuing medical education
+
+```{r}
+medical.edu = scale_wforce %>% 
+  select(1:4,ncol(scale_wforce)) %>% 
+  rename_with(.fn = ~ str_split(., "_", simplify = TRUE)[, 3], .cols = 5) %>%
+  group_by(medical.education.providing) %>% 
+  summarise( number = n(), .groups = 'drop_last') %>% 
+  mutate(percent = round((number/sum(number) *100 ), digits = 2),
+         medical.education.providing = factor(medical.education.providing, levels = factor_training)) %>% 
+  filter(medical.education.providing != "NA")
+
+all.plot(medical.edu,
+         medical.education.providing,percent,medical.education.providing, "Continuing medical education", "","Source: NSOAP Hospital Assessment tool 2025 questionnaire")
+```
+
+# Information management
+
+## Presence of data management system
+
+### By hospital facility level
+
+```{r}
+group_ggplot(presence.ds$byhfl %>% 
+               mutate(ds.scale = factor(ds.scale, levels = factor_readiness)) %>% 
+               filter(ds.scale != "NA"), 
+             ds.scale,percent,geninfo_hcfacilitylevel, 
+             "Presence of data management system", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(presence.ds$byhft %>%
+               mutate(ds.scale = factor(ds.scale, levels = factor_readiness)) %>%
+               filter(ds.scale != "NA"), 
+             ds.scale,percent,geninfo_hcfacilitytype, 
+             "Presence of data management system", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(presence.ds$byprovince %>% 
+               mutate(ds.scale = factor(ds.scale, levels = rev( factor_readiness))) %>%
+               filter(ds.scale != "NA"), 
+             geninfo_province,percent,ds.scale, 
+             "Presence of data management system", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Record Keeping
+
+```{r}
+all.plot(nmrk_recordkeeping,
+         fct_rev(scales),percent,scales, 
+         "Record Keeping", 
+         "",
+         "")
+```
+
+### by hospital facility level
+
+```{r}
+group_ggplot(recordkeeping$byhfl %>% 
+               filter(scales != "NA"),
+             fct_rev(scales),percent,geninfo_hcfacilitylevel, 
+             "Record Keeping", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(recordkeeping$byhft %>% 
+               filter(scales != "NA"),
+             fct_rev(scales),percent,geninfo_hcfacilitytype, 
+             "Record Keeping", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width= 9}
+group_ggplot(recordkeeping$byprovince %>% 
+               filter(scales != "NA"),
+             geninfo_province,percent, scales, 
+             "Record Keeping", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## MoH report submission
+
+```{r}
+all.plot(Mohreporting,
+         scales,percent,scales, "MoH report submission", "","Source: NSOAP Hospital Assessment tool 2025 questionnaire")
+
+```
+
+## Tele-medicine
+
+```{r telemedicine}
+all.plot(telemedicince, 
+         scales,percent,scales, 
+         "Tele-medicine", 
+         "",
+         "")
+```
+
+### by hospital facility level
+
+```{r}
+group_ggplot(ttelemedicince$byhfl,
+             scales,percent,geninfo_hcfacilitylevel, 
+             "Tele-medicine", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(ttelemedicince$byhft,
+             scales,percent,geninfo_hcfacilitytype, 
+             "Tele-medicine", 
+             "by hospital facility type",
+             "",'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(ttelemedicince$byprovince  %>% 
+           mutate(scales = factor(scales, levels = factor_yesno)),
+             geninfo_province,percent,scales, 
+             "Tele-medicine", "distributed by province",
+             "",'none')
+```
+
+### Telemedicine tools used
+
+```{r}
+group_ggplot(tool.telemedicine  %>% 
+           mutate(tools_used = forcats::fct_reorder(tools_used, 
+                                                        n, .desc = FALSE)), 
+             tools_used,n,'', 
+             "Telemedicine tools used", 
+             "",
+             "",
+             'none')
+```
+
+## Medical record maintenance-Patient chart accessibility
+
+```{r}
+group_ggplot(personnel.chart  %>% 
+           mutate(scales = factor(scales, levels = factor_yesno)), 
+             sub.structure,percent,scales,
+             "Medical record maintenance and Patient chart accessibility", 
+             "",
+             "",
+             'none')
+```
+
+### by hospital facility level
+
+```{r}
+group_ggplot(tpersonnel.chart$byhfl %>% 
+  filter(scales == "Yes"),
+             sub.structure,percent,geninfo_hcfacilitylevel, 
+             "Medical record maintenance and Patient chart accessibility", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### by hospital facility type
+
+```{r}
+group_ggplot(tpersonnel.chart$byhft %>% 
+  filter(scales == "Yes"),
+             sub.structure, percent,geninfo_hcfacilitytype, 
+             "Readiness score of sub-structure", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(tpersonnel.chart$byprovince %>% 
+  filter(scales == "Yes"),
+             geninfo_province,percent,sub.structure, 
+             "Medical record maintenance and Patient chart accessibility", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Training courses
+
+```{r}
+group_ggplot(training %>% 
+           mutate(scales = factor(scales, levels = rev(factor_training))),
+             sub.structure,percent,scales, 
+             "Training courses", 
+             "",
+             "",
+             'none')
+```
+
+## Ongoing training courses
+
+```{r}
+all.plot(ongoingresearch %>% 
+           mutate(nresearch = as.character(nresearch) ),
+         nresearch,ogresearch,nresearch,
+         "Ongoing training courses", 
+         "",
+         "")
+```
+
+## Research funding
+
+```{r}
+all.plot(research.fund %>% 
+           mutate(scales = factor(scales, levels = rev(factor_yesno))),
+         scales,percent,scales, 
+         "Research funding", 
+         "",
+         "")
+```
+
+# Financing
+
+# Governance
+
+```{r governance}
+# 202: SOA committee
+group_ggplot(committee.soa, 
+             otherservice,percent,scale, "Governance", "","Source: NSOAP Hospital Assessment tool 2025 questionnaire",'none')
+```
+
+## SOA committee for public hospital facility
+
+```{r}
+leg.all.plot(hf.committee.soa %>% filter(scale != "NA"), 
+             scale,percent,geninfo_hospitalfund, 
+             "SOA committee for public hospital facility", 
+             "",
+             "", "right") #"bottom" "top"
+```
+
+## By hospital facility level
+
+```{r}
+group_ggplot(tcommittee$byhfl %>%  
+               filter(scale != "NA"), 
+             scale,percent,geninfo_hcfacilitylevel, 
+             "Presence of SOA committee", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+## By hospital facility type
+
+```{r}
+group_ggplot(tcommittee$byhft %>%
+               filter(scale != "NA"), 
+             scale,percent,geninfo_hcfacilitytype, 
+             "Presence of SOA committee", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+## Spatially distributed by province
+
+```{r}
+group_ggplot(tcommittee$byprovince %>%
+               filter(scale != "NA") %>% 
+               mutate(scale = factor(scale, levels = factor_yesno)), 
+             geninfo_province,percent,scale, 
+             "Presence of SOA committee", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+# Other indicators
+
+## Access to timely essential surgery within 2hour
+
+```{r}
+all.plot(acc2hf2hour, 
+         scale,percent,scale, 
+         "Population with 2 hours access to health facility", 
+         "",
+         "")
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(houraccess$byhfl,
+             scale,percent,geninfo_hcfacilitylevel, 
+             "Population with 2 hours access to health facility", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(houraccess$byhft,
+             scale,percent,geninfo_hcfacilitytype, 
+             "Population with 2 hours access to health facility", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r}
+group_ggplot(houraccess$byprovince %>% 
+               mutate(scale = factor(scale, levels = factor_safety)),
+             geninfo_province,percent,scale, 
+             "Population with 2 hours access to health facility", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Number of bellwether procedures performed in the operating theatre per 100,000 population per year
+
+::: {layout="[50,50]"}
+```{r}
+value_box(
+  title = HTML("Bellwether procedures done per year"),
+  value = sum(ds.bellwether.per$byhfl$staff),
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Bellwether procedures per 100,000 population"),
+  value = bellwether.percapita,
+  showcase = fa_i("grav", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+:::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(ds.bellwether.per$byhfl %>% 
+               mutate(type = "Total bellwether"),
+             type,staff,geninfo_hcfacilitylevel, 
+             "Number of bellwether procedures per year", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(ds.bellwether.per$byhft %>% 
+               mutate(type = "Total bellwether"),
+             type,staff,geninfo_hcfacilitytype, 
+             "Number of bellwether procedures per year", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytbellwether.per %>% 
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number of bellwether procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Public health facilities' bellwether procedure capabilities
+
+### By hospital facility level
+
+```{r}
+group_ggplot(pub.bellwether$byhfl %>%
+               mutate(geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel)),
+             type,staff,geninfo_hcfacilitylevel, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(pub.bellwether$byhft %>%
+               mutate(geninfo_hcfacilitytype = factor(geninfo_hcfacilitytype, levels = factor_hftype)),
+             type,staff,geninfo_hcfacilitytype, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(pub.bellwether$byprovince %>%
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Health facilities with Bellwether procedure capabilities", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Number of surgical procedures performed in the operating theatre per 100,000 population per year
+
+Surgical volume (SH.SGR.PROC.P5): The number of procedures undertaken in an operating theatre per 100 000 population per year in each country. A procedure is defined as the incision, excision, or manipulation of tissue that needs regional or general anaesthesia, or profound sedation to control pain.
+
+:::: {layout="[[50,50],[100]]"}
+```{r}
+value_box(
+  title = HTML("Surgical procedures done per year"),
+  value = sum(tsurgery$byhfl$staff),
+  showcase = fa_i("handshake", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgical procedures per 100,000 population"),
+  value = sum(camsurpercapita),
+  showcase = fa_i("wpexplorer", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+::: callout-note
+According to the WHO and the Lancet Commission on Global Surgery, the number of surgical procedures per 100,000 population is a key indicator of access to and utilization of essential surgical services. A minimum of 5,000 procedures per 100,000 population per year is recommended to meet a population’s surgical needs. Cambodia currently performs only `r camsurpercapita` procedures per 100,000 population annually—just `r gap.camsurpercapita`% of the recommended benchmark—highlighting a significant gap in access to surgical care.
+:::
+::::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(tsurgery$byhfl,
+             main.structure,staff,geninfo_hcfacilitylevel, 
+             "Number of surgical procedures per year", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(tsurgery$byhft,
+             main.structure,staff,geninfo_hcfacilitytype, 
+             "Number of surgical procedures per year", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytsurgery %>% 
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Number of Operating Theatres procedures per 100,000 population done per year
+
+:::: {layout="[[50,50],[100]]"}
+```{r}
+value_box(
+  title = HTML("Operating theatre procedures done per year"),
+  value = sum(toperating.theatre$byhfl$staff),
+  showcase = fa_i("binoculars", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Operating theatre procedures per 100,000 population"),
+  value = sum(oper.theatre.percapita),
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+::: callout-note
+According to the WHO and the Lancet Commission on Global Surgery, the number of Operating theatre procedures per 100,000 population is a key indicator of access to and utilization of essential Operating theatre services. A minimum of 5,000 procedures per 100,000 population per year is recommended to meet a population’s Operating theatre needs. Cambodia currently performs only `r oper.theatre.percapita` procedures per 100,000 population annually—just `r gap.oper.theatre.percapita`% of the recommended benchmark—highlighting a significant gap in access to Operating theatre care.
+:::
+::::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(toperating.theatre$byhfl,
+             structure,staff,geninfo_hcfacilitylevel, 
+             "Number of Operating theatre procedures per year", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(toperating.theatre$byhft,
+             structure,staff,geninfo_hcfacilitytype, 
+             "Number of Operating theatre procedures per year", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytoperating.theatre %>% 
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of Operating theatre procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of all workforces per 100,000 population
+
+:::: {layout="[[33.33,33.33,33.33],[100]]"}
+```{r}
+value_box(
+  title = HTML("All workforce"),
+  value = sum(raw.workforce$`all workforce`),
+  showcase = fa_i("snowflake-o", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Workforce per 100,000 population"),
+  value = ytallwfpercapita,
+  showcase = fa_i("gavel", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("All workforce over need"),
+  value = gap.ytallwfpercapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "green")
+```
+
+::: callout-note
+The Lancet Commission on Global Surgery, indicated the global average number of operating theatres is approximately 20 workforces per 100,000 population. Cambodia currently are able to handle 25 workforce per 100,000 population annually— `r ytallwfpercapita` is over different from The Lancet Commission on Global Surgery the Lancet Commission on Global Surgery recommended benchmark—highlighting a significant increase in workforce for surgery.
+:::
+::::
+
+### all workforce distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytallwf %>% 
+               mutate(type = case_when(type == "cases per 100,000 population" ~ "Workforces per 100,000 population",
+                                       type == "all workforce" ~ "Total Workforces", TRUE ~ type), 
+                      geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of Workforce performed per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of SAO specialist per 100,000 population
+
+Specialist surgical workforce density (WDI Indicator SH.MED.SAOP.P5): The number of specialist surgical, anaesthetic, and obstetric (SAO) providers who are working in each country per 100 000 population.
+
+:::: {layout="[[33.33,33.33,33.33],[100]]"}
+```{r}
+value_box(
+  title = HTML("Specialist surgical workforce"),
+  value = sum(raw.workforce$`SAO specialist`),
+  showcase = fa_i("puzzle-piece", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Specialist surgical workforce per 100,000 population"),
+  value = saopercapita,
+  showcase = fa_i("search", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Specialist surgical workforce over need"),
+  value = gap.saopercapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "green")
+```
+
+::: callout-note
+The World Health Organization (WHO), the global average number of operating theatres is approximately 20 per 100,000 population. Cambodia currently are able to handle `r saopercapita` procedures per 100,000 population annually— `r gap.saopercapita` different from the recommended benchmark—highlighting a significant gap in access to surgical care.
+:::
+::::
+
+### SAO specialist distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytsao.specialist %>% 
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of surgeons per 100,000 population
+
+:::: {layout="[[33.33,33.33,33.33],[100]]"}
+```{r}
+value_box(
+  title = HTML("Surgeons workforce"),
+  value = sum(raw.workforce$surgeons),
+  showcase = fa_i("snowflake-o", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgeons workforce per 100,000 population"),
+  value = surgeonspercapita,
+  showcase = fa_i("gavel", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgeons workforce unmeet need"),
+  value = gap.surgeonspercapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+
+::: callout-note
+The World Health Organization (WHO), the global average number of operating theatres is approximately 20 per 100,000 population. Cambodia currently are able to handle `r surgeonspercapita` procedures per 100,000 population annually— `r gap.surgeonspercapita` different from the recommended benchmark—highlighting a significant gap in access to surgical care.
+:::
+::::
+
+### surgeons distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytsurgeons %>% 
+               mutate(geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of anesthesia professionals per 100,000 population
+
+:::: {layout="[[33.33,33.33,33.33],[100]]"}
+```{r}
+value_box(
+  title = HTML("Anesthesia professionals workforce"),
+  value = sum(raw.workforce$`anesthesia professionals`),
+  showcase = fa_i("life-ring", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Anesthesia professionals workforce per 100,000 population"),
+  value = anesthesiapercapita,
+  showcase = fa_i("group", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Anesthesia professionals workforce unmeet need"),
+  value = gap.anesthesiapercapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+
+::: callout-note
+The World Health Organization (WHO), the global average number of operating theatres is approximately 20 per 100,000 population. Cambodia currently are able to handle `r anesthesiapercapita` procedures per 100,000 population annually— `r gap.anesthesiapercapita` different from the recommended benchmark—highlighting a significant gap in access to surgical care.
+:::
+::::
+
+### Anesthesia professionals distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytanesthesia.professionals,
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of allied health provider per 100,000 population
+
+Allied health providers include nursing, operational managers, biomedical engineers, radiology, pathology and laboratory technician officers.
+
+:::: {layout="[[33.33,33.33,33.33],[100]]"}
+```{r}
+value_box(
+  title = HTML("Allied health provider workforce"),
+  value = sum(raw.workforce$`allied health provider`),
+  showcase = fa_i("life-ring", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Allied health provider workforce per 100,000 population"),
+  value = alliedhprovider.percapita,
+  showcase = fa_i("group", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Allied health provider workforce unmeet need"),
+  value = gap.alliedhprovider.percapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "green")
+```
+
+::: callout-note
+The World Health Organization (WHO), the global average number of operating theatres is approximately 20 per 100,000 population. Cambodia currently are able to handle `r alliedhprovider.percapita` procedures per 100,000 population annually— `r gap.alliedhprovider.percapita` different from the recommended benchmark—highlighting a significant gap in access to surgical care.
+:::
+::::
+
+### allied health provider distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytalliedhprovider,
+             geninfo_province,staff,type, 
+             "Number and rate per 100,000 population of surgical procedures per year", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Day-of-surgery mortality rate
+
+```{r}
+value_box(
+  title = HTML("Day-of-surgery mortality rate"),
+  value = "NA",
+  showcase = fa_i("eye", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+
+## Hospital recorded data on post operative death
+
+```{r}
+all.plot(tpostoperation %>% 
+           mutate(scale = factor(scale, levels = rev(factor_scale))), 
+         scale,percent,scale, 
+         "Hospital recorded data on post operative death", 
+         "in percent",
+         "")
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(ytpostoperative$byhfl %>% 
+               filter(scale != "NA") %>% 
+           mutate(scale = factor(scale, levels = rev(factor_scale))),
+             scale,percent,geninfo_hcfacilitylevel,
+             "Postoperative in-hospital mortality rate",
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(ytpostoperative$byhft %>% 
+               filter(scale != "NA") %>% 
+           mutate(scale = factor(scale, levels = rev(factor_scale))),
+             scale,percent,geninfo_hcfacilitytype, 
+             "Postoperative in-hospital mortality rate", 
+             "by hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytpostoperative$byprovince %>% 
+               filter(scale != "NA") %>% 
+           mutate(scale = factor(scale, levels = factor_scale)),
+             geninfo_province,percent,scale, 
+             "Postoperative in-hospital mortality rate", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+# Addition indicators
+
+## functioning Surgery Operationing Room (ORs) per 100000 population
+
+```{r}
+publ.ORs = tOR$bypubpri[[3]][tOR$bypubpri[[1]] %in% c("Public")]
+priv.ORs = tOR$bypubpri[[3]][tOR$bypubpri[[1]] %in% c("Private")]
+
+proport.publ.ORs = round(publ.ORs/ (publ.ORs+priv.ORs) *100,2)
+```
+
+The number of functioning ORs per 100,000 population is a key indicator of surgical capacity and access to essential healthcare services. However, this number varies greatly depending on a variety of factors related to a region's healthcare system and overall development. We identified 197 hospitals with surgical capacity with `r publ.ORs+priv.ORs` total operating rooms `r ytOR.percapita` OR per 100,000 population
+
+::: {layout="[33.33,33.33,33.33]"}
+```{r}
+value_box(
+  title = HTML("Total functioning Operating Rooms"),
+  value = sum(OR$values, na.rm = TRUE),
+  showcase = fa_i("university", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Functioning ORs per 100,000 population"),
+  value = ytOR.percapita,
+  showcase = fa_i("users", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("functioning ORs unmeet need"),
+  value = gap.ytOR.percapita,
+  showcase = fa_i("binoculars", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+:::
+
+### by hospital facility
+
+```{r}
+group_ggplot(tnon.functioning.ORs$bypubpri %>% filter(type != "NA"), 
+             type,number,geninfo_hospitalfund, 
+             "functioning operating rooms per 100,000 people", 
+             "by hospital level",
+             "",'none')
+```
+
+### By hospital facility level
+
+```{r}
+group_ggplot(tOR$byhfl, 
+             type,staff,geninfo_hcfacilitylevel, 
+             "functioning operating rooms per 100,000 people", 
+             "by hospital level",
+             "",'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(tOR$byhft, 
+             type,staff,geninfo_hcfacilitytype, 
+             "functioning operating rooms per 100,000 people", 
+             "by hospital type",
+             "",'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytOR, 
+             geninfo_province,staff,type, 
+             "functioning operating rooms per 100,000 people", 
+             "by province",
+             "",'none')
+```
+
+## Surgery beds ratio per 100,000 people
+
+::: {layout="[50,50]"}
+```{r}
+value_box(
+  title = HTML("Total surgery bed"),
+  value = sum(bed.surgery$values, na.rm = TRUE),
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Surgery beds ratio per 100,000 population"),
+  value = per.surgerybed,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "red")
+```
+:::
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytotal.bed.surgery, 
+             geninfo_province,staff,type, 
+             "Surgery beds ratio per 100,000 population", 
+             "by province",
+             "",'none')
+```
+
+## Surgery ICU bed ratio per 100,000 population
+
+::: {layout="[[33.3333,33.3333,33.3333],[50,50]]"}
+```{r}
+value_box(
+  title = HTML("Total ICU beds"),
+  value = ICU.beds,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Total number of surgical beds"),
+  value = Surgical.beds,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Total beds in hospital"),
+  value = total.beds,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Percent of ICU beds by the total number of hospital beds"),
+  value = hosbed.icubed.ratio,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Percent of ICU beds by the number of surgical beds"),
+  value = surbed.icubed.ratio,
+  showcase = fa_i("bed", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "green")
+```
+:::
+
+### By hospital facility level
+
+```{r}
+group_ggplot(total.bed.surgery$byhfl %>% 
+  mutate( type = "Surgery beds ratio",
+    beds = round(staff/province$Total[nrow(province)] *100000, digits = 2)), 
+             type,beds,geninfo_hcfacilitylevel, 
+             "Surgery beds per 100,000 people", 
+             "by hospital level",
+             "",'none')
+```
+
+### By hospital facility type
+
+```{r}
+group_ggplot(total.bed.surgery$byhft %>% 
+  mutate( type = "Surgery beds ratio",
+    beds = round(staff/province$Total[nrow(province)] *100000, digits = 2)), 
+             type,beds,geninfo_hcfacilitytype, 
+             "Surgery beds per 100,000 people", 
+             "by hospital type",
+             "",'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width=9}
+group_ggplot(ytotal.bed.surgery,
+             geninfo_province,staff,type, 
+             "Surgery beds per 100,000 people", 
+             "by province",
+             "",'none')
+```
+
+# WHO gap analysis
+
+## Unmet needs comparison graphic
+
+```{r}
+plot_unmetneed(ggwho.ind  %>% 
+  filter(values > 0),
+               factorname, values, type, 
+               "WHO gaps analysis", 
+               "Remaining gaps in percent compared with WHO standard")
+```
+
+## Unmet needs comparison table
+
+```{r}
+gt(who.ind %>% select(1,2,3,5,4)) %>% 
+    opt_table_font(font = "Arial") %>% 
+    tab_options(
+      table.font.size = "small",  # or use "small", "medium", "large"
+      heading.title.font.size = px(18),
+      heading.subtitle.font.size = px(14) ) %>% 
+    tab_header(
+      title = md(""),
+      subtitle = md("")) %>% 
+    tab_source_note(source_note = "")
+```
+
+# Reveal hidden pattern for decision maker
+
+## Health facility infrastructure readiness comparison
+
+At which level of the healthcare system has facility infrastructure readiness been most significantly impacted, and in what specific areas has this impact been observed?
+
+```{r, fig.width=9}
+relpat.readiness = fac.readiness %>% 
+  group_by(geninfo_province,geninfo_hcfacilitylevel,geninfo_hcfacilitytype,readiness) %>% 
+  summarise(number = n(), .groups = 'drop_last') %>%
+  mutate( percent = round(number / sum(number, na.rm = TRUE) * 100, digits = 2),
+          geninfo_province = factor(geninfo_province, levels = rev(factor_province)),
+          geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel),
+          geninfo_hcfacilitytype  = factor(geninfo_hcfacilitytype, levels = factor_hftype)) %>%
+  filter(!is.na(geninfo_province))
+# Automatically wrap labels to 10 characters per line 
+relpat.readiness$geninfo_hcfacilitylevel <- 
+  str_wrap(relpat.readiness$geninfo_hcfacilitylevel, width = 10)
+
+facetwrap_ggplot(relpat.readiness,
+                 geninfo_province,number,readiness,
+                 geninfo_hcfacilitytype, geninfo_hcfacilitylevel,
+                 "Infrastructure readiness",  "", "",
+                 'top')
+```
+
+## Health facility infrastructure readiness by province
+
+Where are the key factors that have most significantly influenced the readiness of hospital facility infrastructure?
+
+```{r, fig.width=9}
+province.readiness = fac.readiness %>%
+  select(!c((ncol(fac.readiness)-3):ncol(fac.readiness))) %>% 
+  pivot_longer(!c(1:4), names_to = "type", values_to = "values") %>% 
+  mutate(main.structure = str_split(type, "_", simplify = TRUE)[, 2],
+         sub.structure = str_split(type, "_", simplify = TRUE)[, 3]) %>% 
+  select(-type) %>% 
+  group_by(geninfo_province,geninfo_hcfacilitylevel,geninfo_hcfacilitytype,values) %>% 
+  summarise(number = n(), .groups = "drop_last") %>% 
+  mutate(percent = round(number/sum(number)*100, digits = 0),
+         values = case_when(values == 1 ~ "Always",
+                            values == 0 ~ "Not Always"),
+         values = factor(values, levels = rev(c("Always","Not Always"))),
+         geninfo_province = factor(geninfo_province, levels = rev(factor_province)),
+         geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel),
+         geninfo_hcfacilitytype  = factor(geninfo_hcfacilitytype, levels = factor_hftype)) %>%
+  filter(!is.na(geninfo_province))
+
+province.readiness$geninfo_hcfacilitylevel <- 
+  str_wrap(province.readiness$geninfo_hcfacilitylevel, width = 10)
+
+facetwrap_ggplot(province.readiness,
+                 geninfo_province,percent,values,
+                 geninfo_hcfacilitytype, geninfo_hcfacilitylevel,
+                 "Infrastructure readiness",  "", "",
+                 'top')
+```
+
+## Health facility infrastructure readiness by main structure
+
+What are the key factors that have most significantly influenced the readiness of hospital facility infrastructure?
+
+```{r, fig.width=9}
+relpat.readiness.score = fac.readiness %>%
+  select(!c((ncol(fac.readiness)-3):ncol(fac.readiness))) %>% 
+  pivot_longer(!c(1:4), names_to = "type", values_to = "values") %>% 
+  mutate(main.structure = str_split(type, "_", simplify = TRUE)[, 2],
+         sub.structure = str_split(type, "_", simplify = TRUE)[, 3],
+         values = as.character(values)) %>% 
+  select(-type) %>% 
+  group_by(geninfo_hcfacilitylevel,geninfo_hcfacilitytype,main.structure,values) %>% 
+  summarise(number = n(), .groups = "drop_last") %>% 
+  mutate(percent = round(number/sum(number)*100, digits = 0),
+         values = case_when(values == 1 ~ "Always",
+                            values == 0 ~ "Not Always"),
+         values = factor(values, levels = rev(c("Always","Not Always"))),
+         main.structure = str_to_sentence(str_replace_all(main.structure,  c("\\." = " "))),
+         geninfo_hcfacilitylevel = factor(geninfo_hcfacilitylevel, levels = factor_hflevel),
+         geninfo_hcfacilitytype  = factor(geninfo_hcfacilitytype, levels = factor_hftype))
+
+# Automatically wrap labels to 20 characters per line and Wrap facet labels to 20 characters per line
+relpat.readiness.score$main.structure <- 
+  str_wrap(relpat.readiness.score$main.structure, width = 20)
+relpat.readiness.score$geninfo_hcfacilitylevel <- 
+  str_wrap(relpat.readiness.score$geninfo_hcfacilitylevel, width = 10)
+
+facetwrap_ggplot(relpat.readiness.score,
+                 main.structure,percent,values,
+                 geninfo_hcfacilitytype, geninfo_hcfacilitylevel,
+                 "Infrastructure readiness",  "", "",
+                 'top')
+```

@@ -1,0 +1,209 @@
+---
+title: "Mapping"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Table of Contents
+    number-sections: true
+    number-depth: 3
+    dpi: 300
+    self-contained: TRUE #FALSE  TRUE
+    highlight-style: pygments
+
+execute:
+  echo: false
+  warning: false
+editor: visual
+---
+
+```{r, warning=FALSE}
+library(rgdal)
+library(geojsonio)
+library(highcharter)
+library(skimr)
+library(psych)
+library(table1)
+
+#library(geojsonio)
+source("main-script.R")
+source("Write-excel.R")
+```
+
+```{r}
+province <- sf::st_read("data/shapefile/Province_2014.shp", quiet = TRUE)
+
+# service delivery #####
+services = allinformation %>% 
+  select(1:5,106,113:115,117,116,118) %>% 
+  pivot_longer(cols = -c(1:5), names_to = "type", values_to = "values")
+
+allservices = services %>% 
+  group_by(type) %>% 
+  summarise(number = n(),
+            tvalue = sum(values, na.rm = TRUE), .groups = "drop_last")
+
+hf.services = onlysum(services,type,values, fname = '')
+
+functioningOR.data = tbed.infor$byprovince %>% filter(type == "Functioning Operating Rooms") %>% select(1,functioningOR = 3)
+
+surgeryvolume.data = hf.services$byprovince %>% filter(type == "total surgical operation") %>% select(1,surgeryvolume = 3)
+
+workforce.data = tallworkforce$byprovince %>% filter(type == "all workforce") %>% 
+  select(1,workforce = 3)
+
+wfsurg = left_join(workforce.data, surgeryvolume.data, by = "geninfo_province")
+
+nonspatial.data = left_join(wfsurg, functioningOR.data, by = "geninfo_province") %>% 
+  select(1:4) %>% 
+  mutate(provcod14 = case_when(geninfo_province =="Banteay Meanchey"~1,
+                               geninfo_province =="Battambang"~2,
+                               geninfo_province =="Kampong Cham"~3,
+                               geninfo_province =="Kampong Chhnang"~4,
+                               geninfo_province =="Kampong Speu"~5,
+                               geninfo_province =="Kampong Thom"~6,
+                               geninfo_province =="Kampot"~7,
+                               geninfo_province =="Kandal"~8,
+                               geninfo_province =="Kep"~23,
+                               geninfo_province =="Koh Kong"~9,
+                               geninfo_province =="Kratie"~10,
+                               geninfo_province =="Mondul Kiri"~11,
+                               geninfo_province =="Pailin"~24,
+                               geninfo_province =="Phnom Penh"~12,
+                               geninfo_province =="Preah Sihanouk"~18,
+                               geninfo_province =="Preah Vihear"~13,
+                               geninfo_province =="Prey Veng"~14,
+                               geninfo_province =="Pursat"~15,
+                               geninfo_province =="Ratanak Kiri"~16,
+                               geninfo_province =="Siem Reap"~17,
+                               geninfo_province =="Stung Treng"~19,
+                               geninfo_province =="Svay Rieng"~20,
+                               geninfo_province =="Takeo"~21,
+                               geninfo_province =="Tboung Khmum"~25
+                               ))
+
+provincemap = left_join(province, nonspatial.data, by= "provcod14")
+```
+
+# Map of Workforces
+
+```{r}
+# https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+#summary(nonspatial.data)
+#skim(nonspatial.data)
+#describe(nonspatial.data)
+#table1(~ functioningOR + surgeryvolume + workforce | provn14En, data = nonspatial.data)
+
+highchart(type = "map") %>%
+    hc_add_series_map(map = geojson_list(sf::as_Spatial(provincemap)), df = nonspatial.data, 
+                      name = "Map of workforce operated in health facility by province",
+                      value = "workforce", joinBy = "provcod14",
+                      #borderColor = "#FFFFFF", borderWidth = 0.1,
+                      dataLabels = list(
+                        useHTML = TRUE,
+                        enabled = TRUE,
+                        format = '<b><span style="color:black; font-size:9px; text-align:center; display:block;">{point.properties.provn14En}</span></b> </br><b><span style="color:darkblue;font-size:8px; text-align:center; display:block;">{point.properties.workforce}</span></b>')
+    ) %>%
+    hc_tooltip(
+      useHTML = TRUE, 
+      headerFormat = "",
+      pointFormat = '<b><span style="color:darkred;">Province: {point.provn14En}</span></b></br> <b><span style="color:darkred;">Workforces: {point.workforce}</span></b></br>'
+    ) %>%
+    #hc_colorAxis(stops = color_stops()) %>%
+    # hc_colorAxis( minColor = "darkblue", maxColor = "yellow", dataClasses = color_classes(c(0, 1, 2, 3))) %>% 
+    hc_colorAxis(dataClassColor="workforce",
+                 dataClasses = list(list(from=1, to=25, color="#d73027", name="1-25"),
+                                    list(from=25.1, to=105, color="#fc8d59", name="26-105"),
+                                    list(from=105.1, to=218, color="#fee08b", name="106-218"),
+                                    list(from=218.1, to=373, color="#ffffbf", name="219-373"),
+                                    list(from=373.1, to=500, color="#d9ef8b", name="374-500"),
+                                    list(from=500.1, to=2000, color="#91cf60", name="500-2000"),
+                                    list(from=2000.1, to=3000, color="#1a9850", name=">2000"))) %>%
+    hc_legend( layout = "right", 
+               align = "right",
+               floating = TRUE, valueDecimals = 0, valueSuffix = "") %>% 
+    hc_mapNavigation(enabled = TRUE) %>% 
+    hc_exporting(enabled = TRUE)
+```
+
+# Map of surgery volume
+
+```{r}
+# https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+#summary(nonspatial.data)
+#skim(nonspatial.data)
+#describe(nonspatial.data)
+#table1(~ functioningOR + surgeryvolume + workforce | provn14En, data = nonspatial.data)
+
+highchart(type = "map") %>%
+    hc_add_series_map(map = geojson_list(sf::as_Spatial(provincemap)), df = nonspatial.data, 
+                      name = "Map of surgery volume in health facility by province",
+                      value = "surgeryvolume", joinBy = "provcod14",
+                      #borderColor = "#FFFFFF", borderWidth = 0.1,
+                      dataLabels = list(
+                        useHTML = TRUE,
+                        enabled = TRUE,
+                        format = '<b><span style="color:black; font-size:9px; text-align:center; display:block;">{point.properties.provn14En}</span></b> </br><b><span style="color:darkblue;font-size:8px; text-align:center; display:block;">{point.properties.surgeryvolume}</span></b>')
+    ) %>%
+    hc_tooltip(
+      useHTML = TRUE, 
+      headerFormat = "",
+      pointFormat = '<b><span style="color:darkred;">Province: {point.provn14En}</span></b></br> <b><span style="color:darkred;">Surgery volume: {point.surgeryvolume}</span></b></br>'
+    ) %>%
+    #hc_colorAxis(stops = color_stops()) %>%
+    # hc_colorAxis( minColor = "darkblue", maxColor = "yellow", dataClasses = color_classes(c(0, 1, 2, 3))) %>% 
+    hc_colorAxis(dataClassColor="surgeryvolume",
+                 dataClasses = list(list(from=1, to=500, color="#d73027", name="1-500"),
+                                    list(from=500.1, to=2000, color="#fc8d59", name="501-2000"),
+                                    list(from=2000.1, to=5000, color="#fee08b", name="2001-5000"),
+                                    list(from=5000.1, to=10000, color="#ffffbf", name="5001-10000"),
+                                    list(from=10000.1, to=50000, color="#d9ef8b", name="10000-50000"),
+                                    list(from=50000.1, to=100000, color="#91cf60", name="50001-100000"),
+                                    list(from=100000.1, to=300000, color="#1a9850", name=">100000"))) %>%
+    hc_legend( layout = "right", 
+               align = "right",
+               floating = TRUE, valueDecimals = 0, valueSuffix = "") %>% 
+    hc_mapNavigation(enabled = TRUE) %>% 
+    hc_exporting(enabled = TRUE)
+```
+
+# Map of functioning Operating Rooms
+
+```{r}
+# https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+#summary(nonspatial.data)
+#skim(nonspatial.data)
+#describe(nonspatial.data)
+#table1(~ functioningOR + surgeryvolume + workforce | provn14En, data = nonspatial.data)
+
+highchart(type = "map") %>%
+    hc_add_series_map(map = geojson_list(sf::as_Spatial(provincemap)), df = nonspatial.data, 
+                      name = "Map of functioning Operating Rooms in health facility by province",
+                      value = "functioningOR", joinBy = "provcod14",
+                      #borderColor = "#FFFFFF", borderWidth = 0.1,
+                      dataLabels = list(
+                        useHTML = TRUE,
+                        enabled = TRUE,
+                        format = '<b><span style="color:black; font-size:9px; text-align:center; display:block;">{point.properties.provn14En}</span></b> </br><b><span style="color:darkblue;font-size:8px; text-align:center; display:block;">{point.properties.functioningOR}</span></b>')
+    ) %>%
+    hc_tooltip(
+      useHTML = TRUE, 
+      headerFormat = "",
+      pointFormat = '<b><span style="color:darkred;">Province: {point.provn14En}</span></b></br> <b><span style="color:darkred;">Workforces: {point.functioningOR}</span></b></br>'
+    ) %>%
+    #hc_colorAxis(stops = color_stops()) %>%
+    # hc_colorAxis( minColor = "darkblue", maxColor = "yellow", dataClasses = color_classes(c(0, 1, 2, 3))) %>% 
+    hc_colorAxis(dataClassColor="functioningOR",
+                 dataClasses = list(list(from=1, to=5, color="#d73027", name="1-5"),
+                                    list(from=5.1, to=10, color="#fc8d59", name="6-10"),
+                                    list(from=10.1, to=15, color="#fee08b", name="10-15"),
+                                    list(from=15.1, to=20, color="#ffffbf", name="16-20"),
+                                    list(from=20.1, to=50, color="#d9ef8b", name="21-50"),
+                                    list(from=50.1, to=100, color="#91cf60", name="51-100"),
+                                    list(from=100.1, to=140, color="#1a9850", name=">100"))) %>%
+    hc_legend( layout = "right", 
+               align = "right",
+               floating = TRUE, valueDecimals = 0, valueSuffix = "") %>% 
+    hc_mapNavigation(enabled = TRUE) %>% 
+    hc_exporting(enabled = TRUE)
+```

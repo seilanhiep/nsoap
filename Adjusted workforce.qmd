@@ -1,0 +1,360 @@
+---
+title: ""
+subtitle: ""
+date: ""
+author: ""
+abstract: ""
+abstract-title: ""
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Table of Contents
+    number-sections: true
+    number-depth: 3
+    dpi: 300
+    self-contained: TRUE #FALSE  TRUE
+    highlight-style: github # arrow, pygments, tango, espresso, zenburn, kate, monochrome, breezedark, haddock, atom-one, ayu, breeze, dracula, github, gruvbox, monokai, nord, oblivion, printing, radical, solarized, vim
+
+execute:
+  echo: false
+  warning: false
+editor: visual
+---
+
+```{r}
+source("main-script.R")
+source("Write-excel.R")
+```
+
+## Density of Workforce
+
+```{r, fig.width= 10}
+group_ggplot(workforce.distribution.hft %>% 
+                select(c(1,10:14)) %>% 
+                mutate(`Adjusted Private WF` = round(`Adjusted Private WF`,digits = 0),
+                       `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>% 
+                pivot_longer(!c(1), names_to = "type", values_to = "adjusted.staff") %>% 
+                mutate(type = factor(type, levels = c("Public HF","Private HF","Total WF","Adjusted Private WF","Total adjusted WF"))),
+              fct_rev(workforces),adjusted.staff,type, 
+              "Density of adjusted Workforce", 
+              "by hospital facility",
+              "",
+              'none')
+```
+
+#### table
+
+```{r}
+wf.table(workforce.distribution.hft %>% 
+                select(c(1,10:14)),
+         "**Density of Workforce**","*by hospital facility*")
+```
+
+### by hospital facility level
+
+#### ggplot
+
+```{r, fig.width= 10}
+group_ggplot(workforce.distribution %>%
+               mutate(`Adjusted Private WF` = round(`Adjusted Private WF`,digits = 0) ,
+                    `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>%
+               select(c(1:4,6,8:10)) %>% 
+               pivot_longer(!c(1), names_to = "type", values_to = "adjusted.staff") %>% 
+             mutate(type = factor(type, levels = c("National HF","Provincial HF","District HF","Private HF","Adjusted Private WF","Total WF","Total adjusted WF"))), 
+             fct_rev(workforces),adjusted.staff,type, 
+             "Density of adjusted Workforce", 
+             "by hospital facility level",
+             "",
+             'none')
+```
+
+#### table
+
+```{r}
+wf.table(workforce.distribution,
+         "**Density of Workforce**","*by hospital facility level*")
+```
+
+### By hospital facility type
+
+#### ggplot
+
+```{r, fig.width= 10}
+group_ggplot(workforce.distribution.hft %>% 
+                select(c(1:3,7:9,14)) %>% 
+                mutate(`Adjusted private Hospital` = round(`Adjusted private Hospital`,digits = 0),
+                       `Adjusted Policlinic` = round(`Adjusted Policlinic`,digits = 0),
+                       `Adjusted Clinic` = round(`Adjusted Clinic`,digits = 0),
+                       `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>% 
+                pivot_longer(!c(1), names_to = "type", values_to = "adjusted.staff") %>%
+                mutate(type = factor(type, levels = c("CPA3","CPA2","Adjusted private Hospital","Adjusted Policlinic","Adjusted Clinic","Total adjusted WF"))),
+              fct_rev(workforces),adjusted.staff,type, 
+              "Density of adjusted Workforce", 
+              "by hospital facility type",
+              "",
+              'none')
+```
+
+#### table
+
+```{r}
+wf.table(workforce.distribution.hft,
+         "**Density of Workforce**","*by hospital facility type*")
+```
+
+### Spatially distributed by province
+
+#### Specialist workforces
+
+```{r, fig.width= 10}
+surgeon = workforce.distribution.prov %>% 
+  select(1:3,6,8) %>%
+  mutate(`Adjusted Private WF` = round(`Adjusted Private WF`,digits = 0),
+         `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>%  
+  filter(workforces %in% c("Anaesthesiologists","General surgeons","Obstetricians gynaecologists",
+                           "Paediatric surgeons","Total workforce","Specilist wf"),
+         Province != "NA")
+group_ggplot(surgeon, 
+             Province,`Total adjusted WF`, workforces, 
+             "Surgeons/Obstetricians gynaecologists/Anaesthesiologists/Pediatric", 
+             "",
+             "",
+             'none')
+```
+
+#### General doctors/Medical officers/Nurses
+
+```{r, fig.width= 10}
+doctor = workforce.distribution.prov %>% 
+  select(1:3,6,8) %>%
+  mutate(`Adjusted Private WF` = round(`Adjusted Private WF`,digits = 0),
+         `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>% 
+  filter(workforces %in% c("General doctors providing surgery","General doctors providing anesthesia",
+                           "Medical officers providing surgery","Medical officers providing anesthesia",
+                           "Nurses providing surgery","Nurses providing anesthesia"),
+         Province != "NA")
+doctor$workforces <- str_wrap(doctor$workforces, width = 15)
+
+group_ggplot(doctor,
+             Province,`Total adjusted WF`,workforces, 
+             "General doctors/Medical officers/Nurses", 
+             "",
+             "",
+             'none')
+```
+
+#### Allied health providers
+
+```{r, fig.width= 10}
+alliance = workforce.distribution.prov %>% 
+  select(1:3,6,8) %>%
+  mutate(`Adjusted Private WF` = round(`Adjusted Private WF`,digits = 0),
+         `Total adjusted WF` = round(`Total adjusted WF`,digits = 0)) %>%  
+  filter(workforces %in% c("Midwives","Midwives on labour and delivery",
+                           "Radiologists","Pathologists","Pharmacists","Biomedical technicians",
+                           "Other related surgery obstetric and anesthesia"),
+         Province != "NA")
+alliance$workforces <- str_wrap(alliance$workforces, width = 20)
+group_ggplot(alliance, 
+             Province,`Total adjusted WF`, workforces,
+             "Allied health providers", "","",'none')
+```
+
+#### table
+
+```{r}
+wf.table(workforce.distribution.prov %>% 
+           filter(workforces != "Total workforce",
+                  workforces != "Specilist wf"),
+         "**Density of Workforce**","*by province*")
+```
+
+## Capacity of Surgery coverage
+
+### By hospital facility level
+
+```{r, fig.width= 10}
+group_ggplot(tallworkforce.adjust$byhfl %>% 
+               filter(str_detect(type, regex("adjusted", ignore_case = TRUE))) %>% 
+               mutate(staff = case_when(geninfo_hcfacilitylevel == "Private" ~ round(staff, digits = 0),
+                                        TRUE ~ staff)),
+             type,staff,geninfo_hcfacilitylevel, 
+             "Specialist surgical workforce density", 
+             "By hospital facility level",
+             "",
+             'none')
+```
+
+### By hospital facility type
+
+```{r, fig.width= 10}
+group_ggplot(tallworkforce.adjust$byhft %>% 
+               filter(str_detect(type, regex("adjusted", ignore_case = TRUE))) %>% 
+               mutate(staff = case_when(geninfo_hcfacilitytype %in% c("Clinic","Policlinic","Private Hospital") ~ round(staff, digits = 0),
+                                        TRUE ~ staff)),
+             type,staff,geninfo_hcfacilitytype, 
+             "Specialist surgical workforce density", 
+             "By hospital facility type",
+             "",
+             'none')
+```
+
+### Spatially distributed by province
+
+```{r, fig.width= 10}
+group_ggplot(tallworkforce.adjust$byprovince %>% 
+               filter(str_detect(type, regex("adjusted", ignore_case = TRUE))) %>% 
+               mutate(staff = round(staff, digits = 0)),
+             geninfo_province,staff,type, 
+             "Total adjusted workforces", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+## Density and ratio of all workforces per 100,000 population
+
+:::: {layout="[[30,35,35],[30,35,35],[30,35,35],[30,35,35],[100]]"}
+
+```{r}
+value_box(
+  title = HTML("Specialist workforce"),
+  value = round(sum(all.specialistwf.adjust$tvalue),digits = 0),
+  showcase = fa_i("snowflake-o", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Specialist workforce per 100,000 population"),
+  value = yall.specialistwf.adjust.percapita,
+  showcase = fa_i("gavel", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Specialist workforce unmet need"),
+  value = gap.yall.specialistwf.adjust.percapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "red")
+```
+
+```{r}
+value_box(
+  title = HTML("Private HF's workforce"),
+  value = round(total.workforce.distribution$`Private HF`[[19]],digits = 0),
+  showcase = fa_i("snowflake-o", style = "font-size: 3em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Private HF's workforce per 100,000 population"),
+  value = privhf.percap,
+  showcase = fa_i("gavel", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Private HF's workforce unmet need"),
+  value = gap.privhf.percap,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "red")
+```
+
+```{r}
+value_box(
+  title = HTML("Public HF's workforce"),
+  value = round(total.workforce.distribution$`Public HF`[[19]],digits = 0),
+  showcase = fa_i("snowflake-o", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("Public HF's workforce per 100,000 population"),
+  value = pubhf.percap,
+  showcase = fa_i("gavel", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("Public HF's workforce over need"),
+  value = gap.pubhf.percap,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "green")
+```
+
+```{r}
+value_box(
+  title = HTML("<div style='width:100%; word-wrap:break-word;'>All workforce</div>"),
+  value = round(sum(adj.nat.wforce$`adjusted workforces`),digits = 0),
+  showcase = fa_i("snowflake-o", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "warning")
+```
+
+```{r}
+value_box(
+  title = HTML("<div style='width:100%; word-wrap:break-word;'>Workforce per 100,000 population</div>"),
+  value = ytallwf.adjust.percapita,
+  showcase = fa_i("gavel", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "info")
+```
+
+```{r}
+value_box(
+  title = HTML("<div style='width:100%; word-wrap:break-word;'>All workforce over need</div>"),
+  value = gap.ytallwf.adjust.percapita,
+  showcase = fa_i("exclamation-triangle", style = "font-size: 2em; color: #0d6efd;"),
+  theme = "green")
+```
+
+::: callout-note
+The Lancet Commission on Global Surgery, indicated the global average number of operating theatres is approximately 20 workforces per 100,000 population. Cambodia currently are able to handle `r ytallwf.adjust.percapita` workforce per 100,000 population annually— `r ytallwf.adjust.percapita` is over different from The Lancet Commission on Global Surgery the Lancet Commission on Global Surgery recommended benchmark—highlighting a significant increase in workforce for surgery.
+:::
+::::
+
+### All workforce distributed by province
+
+```{r, fig.width=10}
+group_ggplot(ytallwf.adjust %>% 
+               mutate(type = case_when(type == "all workforce" ~ "Total Workforces", TRUE ~ type),
+                      staff = round(staff, digits = 0),
+                      geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "Workforces per 100,000 population", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+### Specilist workforce distributed by province
+
+```{r, fig.width=10}
+group_ggplot(ytspecialistwf.adjust %>% 
+               mutate(staff = round(staff, digits = 0),
+                      geninfo_province = factor(geninfo_province, levels = rev(factor_province))),
+             geninfo_province,staff,type, 
+             "specialist workforces per 100,000 population", 
+             "distributed by province",
+             "",
+             'none')
+```
+
+### Workforces distributed by province
+
+```{r, fig.width=10}
+group_ggplot(wfperpop %>%
+               mutate(type_newline = str_replace_all(type, "_", "\n")) %>% 
+               filter(type %in% c("staff_adjusted all workforce","staff_adjusted specilist wf",
+                                  "Workforces per 100,000 population_adjusted all workforce","Workforces per 100,000 population_adjusted specilist wf")),
+             geninfo_province,staff,type_newline, 
+             "Workforces per 100,000 population", 
+             "distributed by province",
+             "",
+             'none')
+```
